@@ -13,12 +13,14 @@
 //! - FFI bindings for macOS (Swift) and Windows (C#)
 
 pub mod api;
+pub mod comfyui;
 pub mod db;
 pub mod engine;
 pub mod ffi;
 pub mod models;
 
 pub use api::{ApiGateway, GenerationTask, TaskStatus, VideoGenerationConfig, VideoGeneratorAdapter};
+pub use comfyui::{ComfyUIClient, WorkflowTranslator};
 pub use db::Database;
 pub use engine::{NodeEngine, WorkflowExecutor};
 pub use models::{Connection, Node, NodeParam, NodeType, Project, Shot, ShotStatus, Workflow};

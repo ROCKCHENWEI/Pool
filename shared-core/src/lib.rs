@@ -12,8 +12,10 @@
 //! - OpenClaw integration
 //! - FFI bindings for macOS (Swift) and Windows (C#)
 
+pub mod db;
 pub mod models;
 
+pub use db::Database;
 pub use models::{Connection, Node, NodeParam, NodeType, Project, Shot, ShotStatus, Workflow};
 
 /// Placeholder function for library initialization

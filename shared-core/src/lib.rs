@@ -13,9 +13,11 @@
 //! - FFI bindings for macOS (Swift) and Windows (C#)
 
 pub mod db;
+pub mod engine;
 pub mod models;
 
 pub use db::Database;
+pub use engine::{NodeEngine, WorkflowExecutor};
 pub use models::{Connection, Node, NodeParam, NodeType, Project, Shot, ShotStatus, Workflow};
 
 /// Placeholder function for library initialization

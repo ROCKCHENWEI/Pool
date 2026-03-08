@@ -15,6 +15,7 @@
 pub mod api;
 pub mod db;
 pub mod engine;
+pub mod ffi;
 pub mod models;
 
 pub use api::{ApiGateway, GenerationTask, TaskStatus, VideoGenerationConfig, VideoGeneratorAdapter};

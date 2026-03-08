@@ -19,7 +19,7 @@ pub mod engine;
 pub mod ffi;
 pub mod models;
 
-pub use api::{ApiGateway, GenerationTask, TaskStatus, VideoGenerationConfig, VideoGeneratorAdapter};
+pub use api::{ApiGateway, GenerationTask, TaskStatus, VideoGenerationConfig, VideoGeneratorAdapter, KlingAdapter};
 pub use comfyui::{ComfyUIClient, WorkflowTranslator};
 pub use db::Database;
 pub use engine::{NodeEngine, WorkflowExecutor};

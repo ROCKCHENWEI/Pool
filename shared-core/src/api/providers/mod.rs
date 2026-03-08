@@ -1,3 +1,7 @@
+mod kling;
+
+pub use kling::KlingAdapter;
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 

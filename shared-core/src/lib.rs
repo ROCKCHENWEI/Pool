@@ -12,14 +12,9 @@
 //! - OpenClaw integration
 //! - FFI bindings for macOS (Swift) and Windows (C#)
 
-// Modules will be added here as the project develops:
-// pub mod models;
-// pub mod db;
-// pub mod engine;
-// pub mod api;
-// pub mod comfyui;
-// pub mod openclaw;
-// pub mod ffi;
+pub mod models;
+
+pub use models::{Connection, Node, NodeParam, NodeType, Project, Shot, ShotStatus, Workflow};
 
 /// Placeholder function for library initialization
 pub fn init() {

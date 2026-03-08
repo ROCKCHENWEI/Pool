@@ -1,0 +1,17 @@
+# Build artifacts
+/target
+/Cargo.lock
+
+# IDE
+/.idea
+/.vscode
+
+# Database files
+*.db
+*.db-journal
+
+# Environment
+.env
+
+# macOS
+.DS_Store

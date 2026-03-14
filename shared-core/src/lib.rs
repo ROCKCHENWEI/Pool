@@ -19,6 +19,7 @@ pub mod engine;
 pub mod ffi;
 pub mod models;
 pub mod openclaw;
+pub mod optimization;
 
 pub use api::{ApiGateway, GenerationTask, TaskStatus, VideoGenerationConfig, VideoGeneratorAdapter, KlingAdapter};
 pub use comfyui::{ComfyUIClient, WorkflowTranslator};
@@ -26,6 +27,7 @@ pub use db::Database;
 pub use engine::{NodeEngine, WorkflowExecutor};
 pub use models::{Connection, Node, NodeParam, NodeType, Project, Shot, ShotStatus, Workflow};
 pub use openclaw::NodeManager;
+pub use optimization::{AsyncExecutor, LruCache, OptimizationManager};
 
 /// Placeholder function for library initialization
 pub fn init() {

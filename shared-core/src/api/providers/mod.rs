@@ -1,6 +1,12 @@
 mod kling;
+mod vidu;
+mod hailuo;
+mod seedance;
 
 pub use kling::KlingAdapter;
+pub use vidu::ViduAdapter;
+pub use hailuo::HailuoAdapter;
+pub use seedance::SeedanceAdapter;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

@@ -1,6 +1,5 @@
 use anyhow::Result;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
 
 pub struct FeishuBot {
     app_id: String,

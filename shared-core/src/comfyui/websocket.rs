@@ -6,6 +6,7 @@ use tokio::sync::{broadcast, Mutex};
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 /// WebSocket client for ComfyUI real-time communication
+#[derive(Clone)]
 pub struct ComfyUIWebSocket {
     url: String,
     connected: Arc<Mutex<bool>>,

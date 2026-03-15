@@ -10,7 +10,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use parking_lot::RwLock;
 use tokio::sync::{mpsc, Semaphore};
-use tokio::task::JoinHandle;
 
 /// Unique task identifier
 pub type TaskId = u64;

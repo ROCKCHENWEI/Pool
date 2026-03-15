@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 
 /// Cache entry storing value with metadata
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub struct CacheEntry {
     /// The cached value as bytes
     pub data: Vec<u8>,

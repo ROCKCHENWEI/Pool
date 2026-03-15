@@ -17,7 +17,7 @@ impl ApiGateway {
         self.providers.insert(provider.name().to_string(), provider);
     }
 
-    pub fn get_provider(&self, name: &str) -> Option<&dyn VideoGeneratorAdapter> {
+    pub fn get_provider(&self, name: &str) -> Option<&(dyn VideoGeneratorAdapter + Send + Sync)> {
         self.providers.get(name).map(|p| p.as_ref())
     }
 

@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 
 /// Cache entry storing value with metadata
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CacheEntry {
     /// The cached value as bytes
     pub data: Vec<u8>,
@@ -21,6 +21,45 @@ pub struct CacheEntry {
     pub ttl: Duration,
     /// Size in bytes
     pub size: usize,
+}
+
+impl<'de> serde::Deserialize<'de> for CacheEntry {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct CacheEntryHelper {
+            data: Vec<u8>,
+            content_type: String,
+            ttl_secs: u64,
+            size: usize,
+        }
+
+        let helper = CacheEntryHelper::deserialize(deserializer)?;
+        Ok(CacheEntry {
+            data: helper.data,
+            content_type: helper.content_type,
+            created_at: Instant::now(),
+            ttl: Duration::from_secs(helper.ttl_secs),
+            size: helper.size,
+        })
+    }
+}
+
+impl serde::Serialize for CacheEntry {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("CacheEntry", 4)?;
+        state.serialize_field("data", &self.data)?;
+        state.serialize_field("content_type", &self.content_type)?;
+        state.serialize_field("ttl_secs", &self.ttl.as_secs())?;
+        state.serialize_field("size", &self.size)?;
+        state.end()
+    }
 }
 
 impl CacheEntry {

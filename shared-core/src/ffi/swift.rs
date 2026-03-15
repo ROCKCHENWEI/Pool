@@ -97,7 +97,7 @@ pub extern "C" fn pool_shot_create(project_id: *const c_char, name: *const c_cha
         }
     };
 
-    let shot = crate::models::Shot::new(project_id_str.to_string(), name_str.to_string());
+    let shot = crate::models::Shot::new(name_str.to_string()).with_project(project_id_str.to_string());
 
     match serde_json::to_string(&shot) {
         Ok(json) => CString::new(json).unwrap().into_raw(),
@@ -131,7 +131,7 @@ pub extern "C" fn pool_workflow_create(name: *const c_char) -> *mut c_char {
         }
     };
 
-    let workflow = crate::models::Workflow::new(name_str.to_string());
+    let workflow = crate::models::Workflow::new(name_str.to_string(), String::new());
 
     match serde_json::to_string(&workflow) {
         Ok(json) => CString::new(json).unwrap().into_raw(),

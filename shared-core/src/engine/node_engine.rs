@@ -19,8 +19,9 @@ impl NodeEngine {
     }
 
     pub fn add_node(&mut self, node: Node) {
-        self.nodes.insert(node.id.clone(), node);
-        self.adjacency.insert(node.id.clone(), Vec::new());
+        let node_id = node.id.clone();
+        self.nodes.insert(node_id.clone(), node);
+        self.adjacency.insert(node_id, Vec::new());
     }
 
     pub fn add_connection(&mut self, connection: Connection) {

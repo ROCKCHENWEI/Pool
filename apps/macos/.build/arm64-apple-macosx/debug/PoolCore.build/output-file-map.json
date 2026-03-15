@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/master.swiftdeps"
+  },
+  "/Users/c3/pool/apps/macos/Sources/PoolCore/ContentView.swift": {
+    "dependencies": "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/ContentView.d",
+    "object": "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/ContentView.swift.o",
+    "swiftmodule": "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/ContentView.dia"
+  }
+}

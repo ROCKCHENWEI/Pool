@@ -14,7 +14,7 @@ impl TelegramBot {
 
     pub fn token(&self) -> &str { &self.token }
 
-    pub async fn send_message(&self, chat_id: i64, text: &str) -> Result<i32> {
+    pub async fn send_message(&self, _chat_id: i64, _text: &str) -> Result<i32> {
         Ok(1)
     }
 }

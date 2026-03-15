@@ -24,23 +24,23 @@ impl HailuoAdapter {
 impl VideoGeneratorAdapter for HailuoAdapter {
     fn name(&self) -> &str { "hailuo" }
 
-    async fn text_to_video(&self, prompt: &str, negative_prompt: Option<&str>, config: VideoGenerationConfig) -> Result<GenerationTask> {
+    async fn text_to_video(&self, _prompt: &str, _negative_prompt: Option<&str>, _config: VideoGenerationConfig) -> Result<GenerationTask> {
         Ok(GenerationTask { task_id: format!("hailuo_{}", uuid::Uuid::new_v4()), status: TaskStatus::Pending, progress: 0.0 })
     }
 
-    async fn image_to_video(&self, image_data: &[u8], prompt: &str, config: VideoGenerationConfig) -> Result<GenerationTask> {
+    async fn image_to_video(&self, _image_data: &[u8], _prompt: &str, _config: VideoGenerationConfig) -> Result<GenerationTask> {
         Ok(GenerationTask { task_id: format!("hailuo_{}", uuid::Uuid::new_v4()), status: TaskStatus::Pending, progress: 0.0 })
     }
 
-    async fn get_task_status(&self, task_id: &str) -> Result<TaskStatus> {
+    async fn get_task_status(&self, _task_id: &str) -> Result<TaskStatus> {
         Ok(TaskStatus::Pending)
     }
 
-    async fn cancel_task(&self, task_id: &str) -> Result<()> {
+    async fn cancel_task(&self, _task_id: &str) -> Result<()> {
         anyhow::bail!("Hailuo does not support cancellation")
     }
 
-    async fn download_result(&self, task_id: &str) -> Result<Vec<u8>> {
+    async fn download_result(&self, _task_id: &str) -> Result<Vec<u8>> {
         anyhow::bail!("Not ready")
     }
 }

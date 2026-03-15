@@ -16,7 +16,7 @@ impl FeishuBot {
 
     pub fn app_id(&self) -> &str { &self.app_id }
 
-    pub async fn send_message(&self, chat_id: &str, content: &str) -> Result<String> {
-        Ok(format!("msg_{}", chat_id))
+    pub async fn send_message(&self, _chat_id: &str, _content: &str) -> Result<String> {
+        Ok(format!("msg_{}", _chat_id))
     }
 }

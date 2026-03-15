@@ -1,0 +1,103 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "PackageStructure": ["<PackageStructure>"]
+  "Pool-arm64-apple-macosx26.0-debug.exe": ["<Pool-arm64-apple-macosx26.0-debug.exe>"]
+  "Pool-arm64-apple-macosx26.0-debug.module": ["<Pool-arm64-apple-macosx26.0-debug.module>"]
+  "PoolCore-arm64-apple-macosx26.0-debug.module": ["<PoolCore-arm64-apple-macosx26.0-debug.module>"]
+  "main": ["<Pool-arm64-apple-macosx26.0-debug.exe>","<Pool-arm64-apple-macosx26.0-debug.module>","<PoolCore-arm64-apple-macosx26.0-debug.module>"]
+  "test": ["<Pool-arm64-apple-macosx26.0-debug.exe>","<Pool-arm64-apple-macosx26.0-debug.module>","<PoolCore-arm64-apple-macosx26.0-debug.module>"]
+default: "main"
+nodes:
+  "/Users/c3/pool/apps/macos/Sources/Pool/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/c3/pool/apps/macos/Sources/PoolCore/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool":
+    is-mutated: true
+commands:
+  "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool-entitlement.plist":
+    tool: write-auxiliary-file
+    inputs: ["<entitlement-plist>","<com.apple.security.get-task-allow>"]
+    outputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool-entitlement.plist"]
+    description: "Write auxiliary file /Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool-entitlement.plist"
+
+  "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/c3/pool/apps/macos/Sources/Pool/main.swift"]
+    outputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/sources"]
+    description: "Write auxiliary file /Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/sources"
+
+  "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/main.swift.o","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/ContentView.swift.o"]
+    outputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.product/Objects.LinkFileList"
+
+  "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/c3/pool/apps/macos/Sources/PoolCore/ContentView.swift"]
+    outputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/sources"]
+    description: "Write auxiliary file /Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/sources"
+
+  "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Library/Developer/CommandLineTools/usr/bin/swiftc"]
+    outputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+
+  "<Pool-arm64-apple-macosx26.0-debug.exe>":
+    tool: phony
+    inputs: ["<Pool-arm64-apple-macosx26.0-debug.exe-CodeSigning>"]
+    outputs: ["<Pool-arm64-apple-macosx26.0-debug.exe>"]
+
+  "<Pool-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/main.swift.o","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules/Pool.swiftmodule"]
+    outputs: ["<Pool-arm64-apple-macosx26.0-debug.module>"]
+
+  "<PoolCore-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/ContentView.swift.o","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules/PoolCore.swiftmodule"]
+    outputs: ["<PoolCore-arm64-apple-macosx26.0-debug.module>"]
+
+  "C.Pool-arm64-apple-macosx26.0-debug.exe":
+    tool: shell
+    inputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/main.swift.o","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/ContentView.swift.o","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.product/Objects.LinkFileList"]
+    outputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/Pool"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-L","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug","-o","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool","-module-name","Pool","-Xlinker","-no_warn_duplicate_libraries","-emit-executable","-Xlinker","-alias","-Xlinker","_Pool_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/Library/Developer/CommandLineTools/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx13.0","-Xlinker","-add_ast_path","-Xlinker","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules/Pool.swiftmodule","-Xlinker","-add_ast_path","-Xlinker","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules/PoolCore.swiftmodule","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g"]
+
+  "C.Pool-arm64-apple-macosx26.0-debug.exe-entitlements":
+    tool: shell
+    inputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool-entitlement.plist"]
+    outputs: ["<Pool-arm64-apple-macosx26.0-debug.exe-CodeSigning>"]
+    description: "Applying debug entitlements to ./.build/arm64-apple-macosx/debug/Pool"
+    args: ["codesign","--force","--sign","-","--entitlements","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool-entitlement.plist","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool"]
+
+  "C.Pool-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Users/c3/pool/apps/macos/Sources/Pool/main.swift","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules/PoolCore.swiftmodule","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/sources"]
+    outputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/main.swift.o","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules/Pool.swiftmodule"]
+    description: "Compiling Swift Module 'Pool' (1 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","Pool","-emit-dependencies","-emit-module","-emit-module-path","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules/Pool.swiftmodule","-output-file-map","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/output-file-map.json","-incremental","-c","@/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Pool.build/sources","-I","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx13.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","Pool_main","-parse-as-library","-swift-version","5","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","macos"]
+
+  "C.PoolCore-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Users/c3/pool/apps/macos/Sources/PoolCore/ContentView.swift","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/sources"]
+    outputs: ["/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/ContentView.swift.o","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules/PoolCore.swiftmodule"]
+    description: "Compiling Swift Module 'PoolCore' (1 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","PoolCore","-emit-dependencies","-emit-module","-emit-module-path","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules/PoolCore.swiftmodule","-output-file-map","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/output-file-map.json","-parse-as-library","-incremental","-c","@/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/sources","-I","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx13.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-parse-as-library","-emit-objc-header","-emit-objc-header-path","/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/include/PoolCore-Swift.h","-swift-version","5","-I","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-L","/Library/Developer/CommandLineTools/Library/Developer/Frameworks","-plugin-path","/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","macos"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/c3/pool/apps/macos/Sources/Pool/","/Users/c3/pool/apps/macos/Sources/PoolCore/","/Users/c3/pool/apps/macos/Package.swift","/Users/c3/pool/apps/macos/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+

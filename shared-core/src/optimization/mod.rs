@@ -67,7 +67,7 @@ impl OptimizationManager {
 
     /// Get cached embedding by key
     pub fn get_embedding(&self, key: &str) -> Option<Vec<f32>> {
-        self.embedding_cache.read().get(key).cloned()
+        self.embedding_cache.write().get(&key.to_string())
     }
 
     /// Store embedding in cache
@@ -77,7 +77,7 @@ impl OptimizationManager {
 
     /// Get cached API response
     pub fn get_response(&self, key: &str) -> Option<CacheEntry> {
-        self.response_cache.read().get(key).cloned()
+        self.response_cache.write().get(&key.to_string())
     }
 
     /// Store API response in cache

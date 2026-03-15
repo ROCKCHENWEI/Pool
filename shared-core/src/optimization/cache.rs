@@ -77,6 +77,7 @@ impl CacheStats {
 }
 
 /// Internal cache node for LRU linked list
+#[derive(Debug)]
 struct CacheNode<V> {
     value: V,
     size: usize,
@@ -131,13 +132,23 @@ where
         }
     }
 
-    /// Get a value from the cache
-    pub fn get(&mut self, key: &K) -> Option<&V> {
+    /// Get a value from the cache (read-only, doesn't update access order)
+    pub fn get(&self, key: &K) -> Option<V> {
+        if let Some(node) = self.entries.get(key) {
+            Some(node.value.clone())
+        } else {
+            None
+        }
+    }
+
+    /// Get a value from the cache and update access statistics
+    pub fn get_with_stats(&mut self, key: &K) -> Option<V> {
         if let Some(node) = self.entries.get_mut(key) {
             node.touch();
             self.stats.hits += 1;
-            self.update_access_order(key);
-            Some(&node.value)
+            let key_clone = key.clone();
+            self.update_access_order(&key_clone);
+            Some(node.value.clone())
         } else {
             self.stats.misses += 1;
             None
@@ -265,14 +276,17 @@ impl LruCache<String, CacheEntry> {
 
     /// Get a response as string
     pub fn get_as_string(&mut self, key: &str) -> Option<String> {
-        self.get(key).and_then(|entry| {
+        let key_owned = key.to_string();
+        if let Some(entry) = self.get(&key_owned) {
             if entry.is_expired() {
-                self.remove(&key.to_string());
+                self.remove(&key_owned);
                 None
             } else {
                 entry.as_str().map(|s| s.to_string())
             }
-        })
+        } else {
+            None
+        }
     }
 }
 
@@ -286,7 +300,7 @@ mod tests {
 
         // Test insert and get
         cache.insert("key1".to_string(), "value1".to_string());
-        assert_eq!(cache.get(&"key1".to_string()), Some(&"value1".to_string()));
+        assert_eq!(cache.get(&"key1".to_string()), Some("value1".to_string()));
 
         // Test miss
         assert!(cache.get(&"key2".to_string()).is_none());
@@ -328,7 +342,7 @@ mod tests {
         let embedding = vec![0.1, 0.2, 0.3, 0.4, 0.5];
         cache.insert("test_embedding".to_string(), embedding.clone());
 
-        assert_eq!(cache.get(&"test_embedding".to_string()), Some(&embedding));
+        assert_eq!(cache.get(&"test_embedding".to_string()), Some(embedding));
     }
 
     #[test]

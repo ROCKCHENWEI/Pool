@@ -1,0 +1,3 @@
+module PoolCore {
+    header "/Users/c3/pool/apps/macos/.build/arm64-apple-macosx/debug/PoolCore.build/include/PoolCore-Swift.h"
+}

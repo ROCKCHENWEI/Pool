@@ -1,6 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use reqwest::Client;
+use super::{VideoGeneratorAdapter, VideoGenerationConfig, GenerationTask, TaskStatus};
 
 pub struct HailuoAdapter {
     api_key: String,

@@ -1,8 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use super::{VideoGeneratorAdapter, VideoGenerationConfig, GenerationTask, TaskStatus};
 
 pub struct SeedanceAdapter {
     api_key: String,

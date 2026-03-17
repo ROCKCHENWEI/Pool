@@ -15,7 +15,6 @@ pub struct CacheEntry {
     /// Content type of the data
     pub content_type: String,
     /// When the entry was created (not serialized, recreated on load)
-    #[serde(skip)]
     pub created_at: Instant,
     /// Time-to-live duration
     pub ttl: Duration,

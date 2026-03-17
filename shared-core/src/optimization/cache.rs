@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /// Cache entry storing value with metadata
 #[derive(Debug, Clone)]

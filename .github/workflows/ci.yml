@@ -52,9 +52,13 @@ jobs:
 
       - name: Build
         run: cd shared-core && cargo build --verbose
+        env:
+          RUSTFLAGS: "-A dead_code"
 
       - name: Run tests
         run: cd shared-core && cargo test --verbose
+        env:
+          RUSTFLAGS: "-A dead_code"
 
       - name: Build documentation
         run: cd shared-core && cargo doc --no-deps

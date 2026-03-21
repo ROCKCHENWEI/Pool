@@ -37,7 +37,7 @@ pub enum NodeType {
     ComfyUITextEncode,
     ComfyUIKSampler,
     ComfyUIVAEDecode,
-    ComfyUI SaveImage,
+    ComfyUISaveImage,
     ComfyUILoadCheckpoint,
     ComfyUIEmptyLatentImage,
     ComfyUIClipVisionEncode,

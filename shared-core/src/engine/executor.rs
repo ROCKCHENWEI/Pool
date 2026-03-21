@@ -3,7 +3,6 @@
 //! Executes workflows by coordinating with ComfyUI server and other providers.
 
 use anyhow::{Context, Result};
-use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
 use serde::{Deserialize, Serialize};
@@ -185,7 +184,7 @@ impl WorkflowExecutor {
             .context("Failed to submit workflow to ComfyUI")?;
 
         // Wait for completion
-        let mut progress = 0.1;
+        let mut progress: f32 = 0.1;
         let mut output_files = Vec::new();
 
         loop {
@@ -209,7 +208,7 @@ impl WorkflowExecutor {
                 }
             }
 
-            progress = (progress + 0.05).min(0.95);
+            progress = (progress + 0.05_f32).min(0.95_f32);
             let _ = self.progress_sender.send(WorkflowProgress {
                 workflow_id: self.workflow_id.clone(),
                 current_node: None,

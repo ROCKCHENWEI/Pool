@@ -119,25 +119,32 @@ impl Default for OptimizationManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::runtime::Runtime;
 
     #[test]
     fn test_optimization_manager_creation() {
-        let manager = OptimizationManager::default();
-        let stats = manager.cache_stats();
-        assert_eq!(stats.hits, 0);
-        assert_eq!(stats.misses, 0);
+        let rt = Runtime::new().unwrap();
+        rt.block_on(async {
+            let manager = OptimizationManager::default();
+            let stats = manager.cache_stats();
+            assert_eq!(stats.hits, 0);
+            assert_eq!(stats.misses, 0);
+        });
     }
 
     #[test]
     fn test_embedding_cache() {
-        let manager = OptimizationManager::default();
+        let rt = Runtime::new().unwrap();
+        rt.block_on(async {
+            let manager = OptimizationManager::default();
 
-        // Test miss
-        assert!(manager.get_embedding("test").is_none());
+            // Test miss
+            assert!(manager.get_embedding("test").is_none());
 
-        // Test store and hit
-        let embedding = vec![0.1, 0.2, 0.3];
-        manager.store_embedding("test".to_string(), embedding.clone());
-        assert_eq!(manager.get_embedding("test"), Some(embedding));
+            // Test store and hit
+            let embedding = vec![0.1, 0.2, 0.3];
+            manager.store_embedding("test".to_string(), embedding.clone());
+            assert_eq!(manager.get_embedding("test"), Some(embedding));
+        });
     }
 }

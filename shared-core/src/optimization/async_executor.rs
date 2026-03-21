@@ -379,10 +379,13 @@ mod tests {
 
     #[test]
     fn test_executor_creation() {
-        let executor = AsyncExecutor::new(10);
-        assert_eq!(executor.max_concurrent(), 10);
-        assert_eq!(executor.available_permits(), 10);
-        assert!(!executor.is_shutdown());
+        let rt = Runtime::new().unwrap();
+        rt.block_on(async {
+            let executor = AsyncExecutor::new(10);
+            assert_eq!(executor.max_concurrent(), 10);
+            assert_eq!(executor.available_permits(), 10);
+            assert!(!executor.is_shutdown());
+        });
     }
 
     #[test]
@@ -406,19 +409,25 @@ mod tests {
 
     #[test]
     fn test_executor_stats() {
-        let executor = AsyncExecutor::new(5);
-        let stats = executor.stats();
+        let rt = Runtime::new().unwrap();
+        rt.block_on(async {
+            let executor = AsyncExecutor::new(5);
+            let stats = executor.stats();
 
-        assert_eq!(stats.total_submitted, 0);
-        assert_eq!(stats.running, 0);
-        assert_eq!(stats.completed, 0);
+            assert_eq!(stats.total_submitted, 0);
+            assert_eq!(stats.running, 0);
+            assert_eq!(stats.completed, 0);
+        });
     }
 
     #[test]
     fn test_batch_executor() {
-        let batch = BatchExecutor::new(5);
-        let executor = batch.executor();
+        let rt = Runtime::new().unwrap();
+        rt.block_on(async {
+            let batch = BatchExecutor::new(5);
+            let executor = batch.executor();
 
-        assert_eq!(executor.max_concurrent(), 5);
+            assert_eq!(executor.max_concurrent(), 5);
+        });
     }
 }

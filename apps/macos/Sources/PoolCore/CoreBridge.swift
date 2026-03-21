@@ -85,6 +85,110 @@ import Foundation
 
         return String(cString: result)
     }
+
+    /// Create a sample workflow with ComfyUI nodes.
+    ///
+    /// - Returns: A JSON string containing a sample text-to-image workflow.
+    @objc public static func createSampleWorkflow() -> String {
+        let result = pool_workflow_create_sample()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    /// Get available node types for workflow creation.
+    ///
+    /// - Returns: A JSON string containing an array of node type information.
+    @objc public static func getWorkflowNodeTypes() -> String {
+        let result = pool_workflow_get_node_types()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    /// Execute a workflow.
+    ///
+    /// - Parameter workflowJson: A JSON string containing the workflow.
+    /// - Returns: A JSON string with execution result.
+    @objc public static func executeWorkflow(workflowJson: String) -> String {
+        guard let jsonC = workflowJson.cString(using: .utf8) else {
+            return "{\"success\":false,\"error\":\"Failed to encode workflow as UTF-8\"}"
+        }
+
+        let result = jsonC.withUnsafeBytes { ptr in
+            pool_workflow_execute(ptr.baseAddress!.assumingMemoryBound(to: CChar.self))
+        }
+        defer { pool_string_free(result) }
+
+        return String(cString: result)
+    }
+
+    // MARK: - ComfyUI Operations
+
+    /// Set ComfyUI server configuration.
+    ///
+    /// - Parameters:
+    ///   - serverUrl: The ComfyUI server URL.
+    ///   - timeoutSecs: Connection timeout in seconds.
+    ///   - autoReconnect: Whether to automatically reconnect.
+    ///   - maxRetries: Maximum number of retry attempts.
+    /// - Returns: A JSON string with success status.
+    @objc public static func setComfyUIConfig(
+        serverUrl: String,
+        timeoutSecs: UInt64,
+        autoReconnect: Bool,
+        maxRetries: UInt32
+    ) -> String {
+        guard let urlC = serverUrl.cString(using: .utf8) else {
+            return "{\"success\":false,\"error\":\"Failed to encode URL as UTF-8\"}"
+        }
+
+        let result = urlC.withUnsafeBytes { ptr in
+            pool_comfyui_set_config(
+                ptr.baseAddress!.assumingMemoryBound(to: CChar.self),
+                timeoutSecs,
+                autoReconnect,
+                maxRetries
+            )
+        }
+        defer { pool_string_free(result) }
+
+        return String(cString: result)
+    }
+
+    /// Get current ComfyUI configuration.
+    ///
+    /// - Returns: A JSON string containing the configuration.
+    @objc public static func getComfyUIConfig() -> String {
+        let result = pool_comfyui_get_config()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    /// Test connection to ComfyUI server.
+    ///
+    /// - Returns: A JSON string with connection status.
+    @objc public static func testComfyUIConnection() -> String {
+        let result = pool_comfyui_test_connection()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    /// Connect to ComfyUI server.
+    ///
+    /// - Returns: A JSON string with connection status.
+    @objc public static func connectComfyUI() -> String {
+        let result = pool_comfyui_connect()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    /// Get available ComfyUI workflow templates.
+    ///
+    /// - Returns: A JSON string containing an array of templates.
+    @objc public static func getComfyUITemplates() -> String {
+        let result = pool_comfyui_get_templates()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
 }
 
 // MARK: - C Function Declarations
@@ -113,3 +217,52 @@ func pool_shot_create(_ projectId: UnsafePointer<CChar>, _ name: UnsafePointer<C
 /// Returns a newly allocated JSON string that must be freed with pool_string_free.
 @_silgen_name("pool_workflow_create")
 func pool_workflow_create(_ name: UnsafePointer<CChar>) -> UnsafeMutablePointer<CChar>
+
+// MARK: - ComfyUI C Functions
+
+/// Set ComfyUI configuration.
+/// Returns a JSON string with success status.
+@_silgen_name("pool_comfyui_set_config")
+func pool_comfyui_set_config(
+    _ serverUrl: UnsafePointer<CChar>,
+    _ timeoutSecs: UInt64,
+    _ autoReconnect: Bool,
+    _ maxRetries: UInt32
+) -> UnsafeMutablePointer<CChar>
+
+/// Get ComfyUI configuration.
+/// Returns a JSON string with configuration.
+@_silgen_name("pool_comfyui_get_config")
+func pool_comfyui_get_config() -> UnsafeMutablePointer<CChar>
+
+/// Test connection to ComfyUI server.
+/// Returns a JSON string with connection status.
+@_silgen_name("pool_comfyui_test_connection")
+func pool_comfyui_test_connection() -> UnsafeMutablePointer<CChar>
+
+/// Connect to ComfyUI server.
+/// Returns a JSON string with connection status.
+@_silgen_name("pool_comfyui_connect")
+func pool_comfyui_connect() -> UnsafeMutablePointer<CChar>
+
+/// Get ComfyUI workflow templates.
+/// Returns a JSON string with templates array.
+@_silgen_name("pool_comfyui_get_templates")
+func pool_comfyui_get_templates() -> UnsafeMutablePointer<CChar>
+
+// MARK: - Workflow Execution C Functions
+
+/// Execute a workflow.
+/// Returns a JSON string with execution result.
+@_silgen_name("pool_workflow_execute")
+func pool_workflow_execute(_ workflowJson: UnsafePointer<CChar>) -> UnsafeMutablePointer<CChar>
+
+/// Get available node types.
+/// Returns a JSON string with node types array.
+@_silgen_name("pool_workflow_get_node_types")
+func pool_workflow_get_node_types() -> UnsafeMutablePointer<CChar>
+
+/// Create a sample workflow.
+/// Returns a JSON string with sample workflow.
+@_silgen_name("pool_workflow_create_sample")
+func pool_workflow_create_sample() -> UnsafeMutablePointer<CChar>

@@ -209,6 +209,30 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .navigationTitle("API Keys & Services")
         .frame(width: 550)
+        .onAppear {
+            loadComfyUIConfig()
+        }
+    }
+
+    // MARK: - Configuration Loading
+
+    private func loadComfyUIConfig() {
+        let configJson = CoreBridge.getComfyUIConfig()
+        if let data = configJson.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let serverUrl = json["server_url"] as? String {
+                comfyUIURL = serverUrl
+            }
+            if let timeout = json["timeout_secs"] as? Double {
+                comfyUITimeout = timeout
+            }
+            if let autoReconnect = json["auto_reconnect"] as? Bool {
+                comfyUIAutoReconnect = autoReconnect
+            }
+            if let maxRetries = json["max_retries"] as? Int {
+                comfyUIMaxRetries = maxRetries
+            }
+        }
     }
 
     // MARK: - ComfyUI Actions
@@ -218,21 +242,33 @@ struct SettingsView: View {
         comfyUIStatus = .connecting
 
         Task {
-            do {
-                // Simulate connection test
-                try await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+            // First save the configuration
+            let _ = CoreBridge.setComfyUIConfig(
+                serverUrl: comfyUIURL,
+                timeoutSecs: UInt64(comfyUITimeout),
+                autoReconnect: comfyUIAutoReconnect,
+                maxRetries: UInt32(comfyUIMaxRetries)
+            )
 
-                // In a real implementation, we would call the Rust backend
-                // to test the connection to ComfyUI
-                await MainActor.run {
-                    comfyUIStatus = .connected
-                    isTestingConnection = false
+            // Test connection via Rust backend
+            let resultJson = CoreBridge.testComfyUIConnection()
+
+            await MainActor.run {
+                // Parse result
+                if let data = resultJson.data(using: .utf8),
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let status = json["status"] as? String ?? "error"
+                    let message = json["message"] as? String ?? "Unknown error"
+
+                    if status == "connected" {
+                        comfyUIStatus = .connected
+                    } else {
+                        comfyUIStatus = .error(message)
+                    }
+                } else {
+                    comfyUIStatus = .error("Failed to parse response")
                 }
-            } catch {
-                await MainActor.run {
-                    comfyUIStatus = .error("Connection failed")
-                    isTestingConnection = false
-                }
+                isTestingConnection = false
             }
         }
     }
@@ -242,19 +278,33 @@ struct SettingsView: View {
         comfyUIStatus = .connecting
 
         Task {
-            do {
-                // Simulate connection
-                try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+            // Save configuration first
+            let _ = CoreBridge.setComfyUIConfig(
+                serverUrl: comfyUIURL,
+                timeoutSecs: UInt64(comfyUITimeout),
+                autoReconnect: comfyUIAutoReconnect,
+                maxRetries: UInt32(comfyUIMaxRetries)
+            )
 
-                await MainActor.run {
-                    comfyUIStatus = .connected
-                    isTestingConnection = false
+            // Connect via Rust backend
+            let resultJson = CoreBridge.connectComfyUI()
+
+            await MainActor.run {
+                // Parse result
+                if let data = resultJson.data(using: .utf8),
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let success = json["success"] as? Bool ?? false
+                    let message = json["message"] as? String ?? json["error"] as? String ?? "Unknown error"
+
+                    if success {
+                        comfyUIStatus = .connected
+                    } else {
+                        comfyUIStatus = .error(message)
+                    }
+                } else {
+                    comfyUIStatus = .error("Failed to parse response")
                 }
-            } catch {
-                await MainActor.run {
-                    comfyUIStatus = .error("Failed to connect")
-                    isTestingConnection = false
-                }
+                isTestingConnection = false
             }
         }
     }

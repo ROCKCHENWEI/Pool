@@ -1,4 +1,5 @@
 use pool_core::api::providers::KlingAdapter;
+use pool_core::api::VideoGeneratorAdapter;
 
 #[test]
 fn test_kling_adapter_name() {

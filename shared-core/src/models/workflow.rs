@@ -33,6 +33,15 @@ pub enum NodeType {
     Output,
     ComfyUI,
     APIProvider,
+    // ComfyUI 节点类型
+    ComfyUITextEncode,
+    ComfyUIKSampler,
+    ComfyUIVAEDecode,
+    ComfyUI SaveImage,
+    ComfyUILoadCheckpoint,
+    ComfyUIEmptyLatentImage,
+    ComfyUIClipVisionEncode,
+    ComfyUIControlNetApply,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

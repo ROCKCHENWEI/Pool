@@ -136,6 +136,20 @@ struct NodeEditorView: View {
                     NodeLibraryItem(name: "Video Generation", icon: "video.fill", type: .ai)
                 }
 
+                Section("ComfyUI - Basic") {
+                    NodeLibraryItem(name: "Load Checkpoint", icon: "externaldrive.badge.icloud", type: .comfyuiLoadCheckpoint)
+                    NodeLibraryItem(name: "Text Encode", icon: "textformat", type: .comfyuiTextEncode)
+                    NodeLibraryItem(name: "Empty Latent", icon: "rectangle.dashed", type: .comfyuiEmptyLatent)
+                    NodeLibraryItem(name: "KSampler", icon: "dial.medium", type: .comfyuiKSampler)
+                    NodeLibraryItem(name: "VAE Decode", icon: "photo", type: .comfyuiVAEDecode)
+                    NodeLibraryItem(name: "Save Image", icon: "square.and.arrow.down.on.square", type: .comfyuiSaveImage)
+                }
+
+                Section("ComfyUI - Advanced") {
+                    NodeLibraryItem(name: "CLIP Vision", icon: "eye", type: .comfyuiClipVision)
+                    NodeLibraryItem(name: "ControlNet", icon: "slider.horizontal.3", type: .comfyuiControlNet)
+                }
+
                 Section("Output Nodes") {
                     NodeLibraryItem(name: "Video Output", icon: "square.and.arrow.up", type: .output)
                     NodeLibraryItem(name: "Image Output", icon: "square.and.arrow.up", type: .output)
@@ -206,6 +220,8 @@ struct WorkflowNode: Identifiable {
 
     enum NodeType {
         case input, ai, output, utility
+        case comfyuiTextEncode, comfyuiKSampler, comfyuiVAEDecode, comfyuiSaveImage
+        case comfyuiLoadCheckpoint, comfyuiEmptyLatent, comfyuiClipVision, comfyuiControlNet
 
         var displayName: String {
             switch self {
@@ -213,6 +229,14 @@ struct WorkflowNode: Identifiable {
             case .ai: return "AI"
             case .output: return "Output"
             case .utility: return "Utility"
+            case .comfyuiTextEncode: return "Text Encode"
+            case .comfyuiKSampler: return "KSampler"
+            case .comfyuiVAEDecode: return "VAE Decode"
+            case .comfyuiSaveImage: return "Save Image"
+            case .comfyuiLoadCheckpoint: return "Load Checkpoint"
+            case .comfyuiEmptyLatent: return "Empty Latent"
+            case .comfyuiClipVision: return "CLIP Vision"
+            case .comfyuiControlNet: return "ControlNet"
             }
         }
 
@@ -222,6 +246,43 @@ struct WorkflowNode: Identifiable {
             case .ai: return .purple
             case .output: return .green
             case .utility: return .orange
+            // ComfyUI nodes use a teal/cyan color
+            case .comfyuiTextEncode: return Color(red: 0.0, green: 0.8, blue: 0.8)
+            case .comfyuiKSampler: return Color(red: 0.2, green: 0.6, blue: 0.8)
+            case .comfyuiVAEDecode: return Color(red: 0.0, green: 0.7, blue: 0.7)
+            case .comfyuiSaveImage: return Color(red: 0.3, green: 0.7, blue: 0.6)
+            case .comfyuiLoadCheckpoint: return Color(red: 0.1, green: 0.75, blue: 0.75)
+            case .comfyuiEmptyLatent: return Color(red: 0.15, green: 0.65, blue: 0.85)
+            case .comfyuiClipVision: return Color(red: 0.05, green: 0.72, blue: 0.78)
+            case .comfyuiControlNet: return Color(red: 0.25, green: 0.68, blue: 0.82)
+            }
+        }
+
+        var isComfyUI: Bool {
+            switch self {
+            case .comfyuiTextEncode, .comfyuiKSampler, .comfyuiVAEDecode,
+                 .comfyuiSaveImage, .comfyuiLoadCheckpoint, .comfyuiEmptyLatent,
+                 .comfyuiClipVision, .comfyuiControlNet:
+                return true
+            default:
+                return false
+            }
+        }
+
+        var iconName: String {
+            switch self {
+            case .input: return "square.and.arrow.down"
+            case .ai: return "brain"
+            case .output: return "square.and.arrow.up"
+            case .utility: return "gearshape"
+            case .comfyuiTextEncode: return "textformat"
+            case .comfyuiKSampler: return "dial.medium"
+            case .comfyuiVAEDecode: return "photo"
+            case .comfyuiSaveImage: return "square.and.arrow.down.on.square"
+            case .comfyuiLoadCheckpoint: return "externaldrive.badge.icloud"
+            case .comfyuiEmptyLatent: return "rectangle.dashed"
+            case .comfyuiClipVision: return "eye"
+            case .comfyuiControlNet: return "slider.horizontal.3"
             }
         }
     }

@@ -88,9 +88,11 @@ impl WorkflowExecutor {
 
     /// Create executor with ComfyUI configuration
     pub fn with_comfyui(workflow: &Workflow, config: ComfyUIConfig) -> Self {
-        let mut executor = Self::new(workflow);
-        let mut current_config = executor.comfyui_config.try_write().unwrap();
-        *current_config = config;
+        let executor = Self::new(workflow);
+        {
+            let mut current_config = executor.comfyui_config.try_write().unwrap();
+            *current_config = config;
+        }
         executor
     }
 

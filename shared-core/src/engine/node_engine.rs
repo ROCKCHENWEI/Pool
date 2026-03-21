@@ -120,13 +120,18 @@ impl NodeEngine {
         match &node.node_type {
             NodeType::ComfyUITextEncode => {
                 if let Some(text) = node.params.get("text") {
-                    inputs.insert("text".to_string(), json!(text));
+                    if let Some(s) = text.as_str() {
+                        inputs.insert("text".to_string(), json!(s));
+                    }
                 }
             }
             NodeType::ComfyUIKSampler => {
-                inputs.insert("seed".to_string(), json!(node.params.get("seed").map(|v| v.as_integer().unwrap_or(0)).unwrap_or(0)));
-                inputs.insert("steps".to_string(), json!(node.params.get("steps").map(|v| v.as_integer().unwrap_or(20)).unwrap_or(20)));
-                inputs.insert("cfg".to_string(), json!(node.params.get("cfg").map(|v| v.as_float().unwrap_or(7.0)).unwrap_or(7.0)));
+                let seed = node.params.get("seed").and_then(|v| v.as_integer()).unwrap_or(0);
+                let steps = node.params.get("steps").and_then(|v| v.as_integer()).unwrap_or(20);
+                let cfg = node.params.get("cfg").and_then(|v| v.as_float()).unwrap_or(7.0);
+                inputs.insert("seed".to_string(), json!(seed));
+                inputs.insert("steps".to_string(), json!(steps));
+                inputs.insert("cfg".to_string(), json!(cfg));
                 inputs.insert("sampler_name".to_string(), json!("euler"));
                 inputs.insert("scheduler".to_string(), json!("normal"));
                 inputs.insert("denoise".to_string(), json!(1.0));
@@ -136,12 +141,16 @@ impl NodeEngine {
             }
             NodeType::ComfyUILoadCheckpoint => {
                 if let Some(ckpt) = node.params.get("checkpoint") {
-                    inputs.insert("ckpt_name".to_string(), json!(ckpt));
+                    if let Some(s) = ckpt.as_str() {
+                        inputs.insert("ckpt_name".to_string(), json!(s));
+                    }
                 }
             }
             NodeType::ComfyUIEmptyLatentImage => {
-                inputs.insert("width".to_string(), json!(node.params.get("width").map(|v| v.as_integer().unwrap_or(512)).unwrap_or(512)));
-                inputs.insert("height".to_string(), json!(node.params.get("height").map(|v| v.as_integer().unwrap_or(512)).unwrap_or(512)));
+                let width = node.params.get("width").and_then(|v| v.as_integer()).unwrap_or(512);
+                let height = node.params.get("height").and_then(|v| v.as_integer()).unwrap_or(512);
+                inputs.insert("width".to_string(), json!(width));
+                inputs.insert("height".to_string(), json!(height));
                 inputs.insert("batch_size".to_string(), json!(1));
             }
             _ => {}

@@ -440,96 +440,120 @@ pub extern "C" fn pool_workflow_get_node_types() -> *mut c_char {
 /// JSON string with a sample text-to-image workflow.
 #[no_mangle]
 pub extern "C" fn pool_workflow_create_sample() -> *mut c_char {
+    use crate::models::{Node, NodeParam, Connection, NodeType};
+    use std::collections::HashMap;
+
     let workflow = crate::models::Workflow {
         id: uuid::Uuid::new_v4().to_string(),
         shot_id: String::new(),
         name: "Sample Text-to-Image Workflow".to_string(),
         nodes: vec![
-            crate::models::Node {
+            Node {
                 id: "checkpoint".to_string(),
-                node_type: crate::models::NodeType::ComfyUILoadCheckpoint,
+                node_type: NodeType::ComfyUILoadCheckpoint,
                 position: (100.0, 100.0),
-                params: serde_json::json!({"checkpoint": "v1-5-pruned.safetensors"}),
+                params: {
+                    let mut m = HashMap::new();
+                    m.insert("checkpoint".to_string(), NodeParam::String("v1-5-pruned.safetensors".to_string()));
+                    m
+                },
             },
-            crate::models::Node {
+            Node {
                 id: "latent".to_string(),
-                node_type: crate::models::NodeType::ComfyUIEmptyLatentImage,
+                node_type: NodeType::ComfyUIEmptyLatentImage,
                 position: (100.0, 250.0),
-                params: serde_json::json!({"width": 512, "height": 512}),
+                params: {
+                    let mut m = HashMap::new();
+                    m.insert("width".to_string(), NodeParam::Integer(512));
+                    m.insert("height".to_string(), NodeParam::Integer(512));
+                    m
+                },
             },
-            crate::models::Node {
+            Node {
                 id: "positive".to_string(),
-                node_type: crate::models::NodeType::ComfyUITextEncode,
+                node_type: NodeType::ComfyUITextEncode,
                 position: (300.0, 100.0),
-                params: serde_json::json!({"text": "a beautiful landscape"}),
+                params: {
+                    let mut m = HashMap::new();
+                    m.insert("text".to_string(), NodeParam::String("a beautiful landscape".to_string()));
+                    m
+                },
             },
-            crate::models::Node {
+            Node {
                 id: "negative".to_string(),
-                node_type: crate::models::NodeType::ComfyUITextEncode,
+                node_type: NodeType::ComfyUITextEncode,
                 position: (300.0, 250.0),
-                params: serde_json::json!({"text": "ugly, blurry, low quality"}),
+                params: {
+                    let mut m = HashMap::new();
+                    m.insert("text".to_string(), NodeParam::String("ugly, blurry, low quality".to_string()));
+                    m
+                },
             },
-            crate::models::Node {
+            Node {
                 id: "sampler".to_string(),
-                node_type: crate::models::NodeType::ComfyUIKSampler,
+                node_type: NodeType::ComfyUIKSampler,
                 position: (500.0, 175.0),
-                params: serde_json::json!({"seed": 123456789, "steps": 20, "cfg": 7.0}),
+                params: {
+                    let mut m = HashMap::new();
+                    m.insert("seed".to_string(), NodeParam::Integer(123456789));
+                    m.insert("steps".to_string(), NodeParam::Integer(20));
+                    m.insert("cfg".to_string(), NodeParam::Float(7.0));
+                    m
+                },
             },
-            crate::models::Node {
+            Node {
                 id: "decode".to_string(),
-                node_type: crate::models::NodeType::ComfyUIVAEDecode,
+                node_type: NodeType::ComfyUIVAEDecode,
                 position: (700.0, 175.0),
-                params: serde_json::json!({}),
+                params: HashMap::new(),
             },
-            crate::models::Node {
+            Node {
                 id: "save".to_string(),
-                node_type: crate::models::NodeType::ComfyUISaveImage,
+                node_type: NodeType::ComfyUISaveImage,
                 position: (900.0, 175.0),
-                params: serde_json::json!({"filename_prefix": "Pool_"}),
+                params: {
+                    let mut m = HashMap::new();
+                    m.insert("filename_prefix".to_string(), NodeParam::String("Pool_".to_string()));
+                    m
+                },
             },
         ],
         connections: vec![
-            crate::models::Connection {
-                id: "conn1".to_string(),
+            Connection {
                 from_node: "checkpoint".to_string(),
-                from_output: 0,
+                from_slot: 0,
                 to_node: "sampler".to_string(),
-                to_input: 0,
+                to_slot: 0,
             },
-            crate::models::Connection {
-                id: "conn2".to_string(),
+            Connection {
                 from_node: "positive".to_string(),
-                from_output: 0,
+                from_slot: 0,
                 to_node: "sampler".to_string(),
-                to_input: 1,
+                to_slot: 1,
             },
-            crate::models::Connection {
-                id: "conn3".to_string(),
+            Connection {
                 from_node: "negative".to_string(),
-                from_output: 0,
+                from_slot: 0,
                 to_node: "sampler".to_string(),
-                to_input: 2,
+                to_slot: 2,
             },
-            crate::models::Connection {
-                id: "conn4".to_string(),
+            Connection {
                 from_node: "latent".to_string(),
-                from_output: 0,
+                from_slot: 0,
                 to_node: "sampler".to_string(),
-                to_input: 3,
+                to_slot: 3,
             },
-            crate::models::Connection {
-                id: "conn5".to_string(),
+            Connection {
                 from_node: "sampler".to_string(),
-                from_output: 0,
+                from_slot: 0,
                 to_node: "decode".to_string(),
-                to_input: 0,
+                to_slot: 0,
             },
-            crate::models::Connection {
-                id: "conn6".to_string(),
+            Connection {
                 from_node: "decode".to_string(),
-                from_output: 0,
+                from_slot: 0,
                 to_node: "save".to_string(),
-                to_input: 0,
+                to_slot: 0,
             },
         ],
         created_at: chrono::Utc::now(),

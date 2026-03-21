@@ -53,6 +53,41 @@ pub enum NodeParam {
     Array(Vec<NodeParam>),
 }
 
+impl NodeParam {
+    /// Get as integer, returns None if not an Integer variant
+    pub fn as_integer(&self) -> Option<i64> {
+        match self {
+            NodeParam::Integer(i) => Some(*i),
+            _ => None,
+        }
+    }
+
+    /// Get as float, returns None if not a Float variant
+    pub fn as_float(&self) -> Option<f64> {
+        match self {
+            NodeParam::Float(f) => Some(*f),
+            NodeParam::Integer(i) => Some(*i as f64),
+            _ => None,
+        }
+    }
+
+    /// Get as string reference, returns None if not a String variant
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            NodeParam::String(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    /// Get as boolean, returns None if not a Boolean variant
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            NodeParam::Boolean(b) => Some(*b),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Connection {
     pub from_node: String,

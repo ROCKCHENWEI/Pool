@@ -62,6 +62,11 @@ impl ComfyUIClient {
         Ok(prompt_id)
     }
 
+    /// Submit a workflow (alias for queue_prompt for consistency)
+    pub async fn submit_workflow(&self, workflow: &HashMap<String, serde_json::Value>) -> Result<String> {
+        self.queue_prompt(workflow).await
+    }
+
     pub async fn get_history(&self, prompt_id: &str) -> Result<Value> {
         let url = format!("{}/history/{}", self.base_url, prompt_id);
         let response = self

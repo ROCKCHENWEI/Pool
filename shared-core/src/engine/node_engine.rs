@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use std::collections::{HashMap, VecDeque};
 
-use crate::models::{Connection, Node};
+use crate::models::{Connection, Node, NodeType};
 
 pub struct NodeEngine {
     nodes: HashMap<String, Node>,
@@ -83,6 +83,74 @@ impl NodeEngine {
 
     pub fn get_connections(&self) -> &[Connection] {
         &self.connections
+    }
+
+    /// Convert the workflow to ComfyUI format
+    pub fn to_comfyui_workflow(&self) -> HashMap<String, serde_json::Value> {
+        let mut workflow = HashMap::new();
+
+        for (index, node) in self.nodes.values().enumerate() {
+            let node_json = self.node_to_comfyui_json(node, index);
+            workflow.insert(index.to_string(), node_json);
+        }
+
+        workflow
+    }
+
+    /// Convert a single node to ComfyUI JSON format
+    fn node_to_comfyui_json(&self, node: &Node, index: usize) -> serde_json::Value {
+        use crate::models::NodeType;
+        use serde_json::json;
+
+        let class_type = match &node.node_type {
+            NodeType::ComfyUITextEncode => "CLIPTextEncode",
+            NodeType::ComfyUIKSampler => "KSampler",
+            NodeType::ComfyUIVAEDecode => "VAEDecode",
+            NodeType::ComfyUISaveImage => "SaveImage",
+            NodeType::ComfyUILoadCheckpoint => "CheckpointLoaderSimple",
+            NodeType::ComfyUIEmptyLatentImage => "EmptyLatentImage",
+            NodeType::ComfyUIClipVisionEncode => "CLIPVisionEncode",
+            NodeType::ComfyUIControlNetApply => "ControlNetApply",
+            _ => "Unknown",
+        };
+
+        let mut inputs = serde_json::Map::new();
+
+        // Add parameters based on node type
+        match &node.node_type {
+            NodeType::ComfyUITextEncode => {
+                if let Some(text) = node.params.get("text") {
+                    inputs.insert("text".to_string(), json!(text));
+                }
+            }
+            NodeType::ComfyUIKSampler => {
+                inputs.insert("seed".to_string(), json!(node.params.get("seed").map(|v| v.as_integer().unwrap_or(0)).unwrap_or(0)));
+                inputs.insert("steps".to_string(), json!(node.params.get("steps").map(|v| v.as_integer().unwrap_or(20)).unwrap_or(20)));
+                inputs.insert("cfg".to_string(), json!(node.params.get("cfg").map(|v| v.as_float().unwrap_or(7.0)).unwrap_or(7.0)));
+                inputs.insert("sampler_name".to_string(), json!("euler"));
+                inputs.insert("scheduler".to_string(), json!("normal"));
+                inputs.insert("denoise".to_string(), json!(1.0));
+            }
+            NodeType::ComfyUISaveImage => {
+                inputs.insert("filename_prefix".to_string(), json!("PoolOutput"));
+            }
+            NodeType::ComfyUILoadCheckpoint => {
+                if let Some(ckpt) = node.params.get("checkpoint") {
+                    inputs.insert("ckpt_name".to_string(), json!(ckpt));
+                }
+            }
+            NodeType::ComfyUIEmptyLatentImage => {
+                inputs.insert("width".to_string(), json!(node.params.get("width").map(|v| v.as_integer().unwrap_or(512)).unwrap_or(512)));
+                inputs.insert("height".to_string(), json!(node.params.get("height").map(|v| v.as_integer().unwrap_or(512)).unwrap_or(512)));
+                inputs.insert("batch_size".to_string(), json!(1));
+            }
+            _ => {}
+        }
+
+        json!({
+            "class_type": class_type,
+            "inputs": inputs
+        })
     }
 }
 

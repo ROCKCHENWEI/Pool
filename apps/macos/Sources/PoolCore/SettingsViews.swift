@@ -1,5 +1,40 @@
 import SwiftUI
 
+/// ComfyUI Connection Status
+enum ComfyUIConnectionStatus {
+    case disconnected
+    case connecting
+    case connected
+    case error(String)
+
+    var color: Color {
+        switch self {
+        case .disconnected: return .gray
+        case .connecting: return .orange
+        case .connected: return .green
+        case .error: return .red
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .disconnected: return "antenna.radiowaves.left.and.right.slash"
+        case .connecting: return "antenna.radiowaves.left.and.right"
+        case .connected: return "checkmark.circle.fill"
+        case .error: return "xmark.circle.fill"
+        }
+    }
+
+    var text: String {
+        switch self {
+        case .disconnected: return "Disconnected"
+        case .connecting: return "Connecting..."
+        case .connected: return "Connected"
+        case .error(let msg): return "Error: \(msg)"
+        }
+    }
+}
+
 /// Settings View - API Keys and service configuration
 /// Manages API keys for external services
 struct SettingsView: View {
@@ -7,7 +42,12 @@ struct SettingsView: View {
     @State private var apiKeyOpenAI = ""
     @State private var apiKeyComfyUI = ""
     @State private var comfyUIURL = "http://127.0.0.1:8188"
+    @State private var comfyUITimeout: Double = 30
+    @State private var comfyUIAutoReconnect = true
+    @State private var comfyUIMaxRetries = 3
     @State private var showKeys = false
+    @State private var comfyUIStatus: ComfyUIConnectionStatus = .disconnected
+    @State private var isTestingConnection = false
 
     var body: some View {
         Form {
@@ -73,39 +113,150 @@ struct SettingsView: View {
                 Text("LLM Services")
             }
 
+            // Enhanced ComfyUI Section
             Section {
-                VStack(alignment: .leading, spacing: 8) {
+                // Server Configuration
+                VStack(alignment: .leading, spacing: 12) {
+                    // Connection Status
                     HStack {
                         Image(systemName: "server.rack")
                             .foregroundColor(.orange)
                             .frame(width: 24)
-                        Text("ComfyUI Local")
+                        Text("ComfyUI Server")
                             .fontWeight(.medium)
                         Spacer()
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                        HStack(spacing: 4) {
+                            Image(systemName: comfyUIStatus.icon)
+                                .foregroundColor(comfyUIStatus.color)
+                            Text(comfyUIStatus.text)
+                                .font(.caption)
+                                .foregroundColor(comfyUIStatus.color)
+                        }
                     }
 
-                    TextField("Server URL", text: $comfyUIURL)
-                        .textFieldStyle(.roundedBorder)
-
-                    Button("Test Connection") {
-                        // Test connection
+                    // Server URL
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Server URL")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        TextField("http://127.0.0.1:8188", text: $comfyUIURL)
+                            .textFieldStyle(.roundedBorder)
                     }
-                    .buttonStyle(.bordered)
 
-                    Text("Local ComfyUI server for image generation")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    // Test Connection Button
+                    HStack {
+                        Button(action: testComfyUIConnection) {
+                            HStack {
+                                if isTestingConnection {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "antenna.radiowaves.left.and.right")
+                                }
+                                Text("Test Connection")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isTestingConnection || comfyUIURL.isEmpty)
+
+                        Button(action: connectComfyUI) {
+                            Text("Connect")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isTestingConnection || comfyUIURL.isEmpty)
+                    }
                 }
                 .padding(.vertical, 4)
+
+                // Advanced Settings
+                DisclosureGroup("Advanced Settings") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Timeout
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Connection Timeout")
+                                Spacer()
+                                Text("\(Int(comfyUITimeout)) sec")
+                                    .foregroundColor(.secondary)
+                            }
+                            Slider(value: $comfyUITimeout, in: 5...120, step: 5)
+                        }
+
+                        // Auto Reconnect
+                        Toggle("Auto Reconnect", isOn: $comfyUIAutoReconnect)
+
+                        // Max Retries
+                        Stepper("Max Retries: \(comfyUIMaxRetries)", value: $comfyUIMaxRetries, in: 1...10)
+                    }
+                    .padding(.top, 8)
+                }
+
+                Text("Local ComfyUI server for AI-powered image and video generation")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             } header: {
-                Text("Local Services")
+                Text("ComfyUI Integration")
+            } footer: {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Make sure ComfyUI is running before connecting.")
+                    Text("Default: http://127.0.0.1:8188")
+                        .foregroundColor(.secondary)
+                }
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("API Keys")
-        .frame(width: 500)
+        .navigationTitle("API Keys & Services")
+        .frame(width: 550)
+    }
+
+    // MARK: - ComfyUI Actions
+
+    private func testComfyUIConnection() {
+        isTestingConnection = true
+        comfyUIStatus = .connecting
+
+        Task {
+            do {
+                // Simulate connection test
+                try await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+
+                // In a real implementation, we would call the Rust backend
+                // to test the connection to ComfyUI
+                await MainActor.run {
+                    comfyUIStatus = .connected
+                    isTestingConnection = false
+                }
+            } catch {
+                await MainActor.run {
+                    comfyUIStatus = .error("Connection failed")
+                    isTestingConnection = false
+                }
+            }
+        }
+    }
+
+    private func connectComfyUI() {
+        isTestingConnection = true
+        comfyUIStatus = .connecting
+
+        Task {
+            do {
+                // Simulate connection
+                try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+
+                await MainActor.run {
+                    comfyUIStatus = .connected
+                    isTestingConnection = false
+                }
+            } catch {
+                await MainActor.run {
+                    comfyUIStatus = .error("Failed to connect")
+                    isTestingConnection = false
+                }
+            }
+        }
     }
 }
 

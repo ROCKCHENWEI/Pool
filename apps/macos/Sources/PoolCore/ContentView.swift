@@ -96,6 +96,11 @@ struct SidebarView: View {
                         .tag("workflow")
                 }
 
+                NavigationLink(value: "results") {
+                    Label("Results", systemImage: "photo.on.rectangle")
+                        .tag("results")
+                }
+
                 NavigationLink(value: "models") {
                     Label("Model Manager", systemImage: "cube.box")
                         .tag("models")
@@ -217,6 +222,8 @@ struct DetailView: View {
                 NodeEditorView()
             case "workflow":
                 WorkflowProgressView()
+            case "results":
+                ResultsGalleryView()
             case "models":
                 ModelsView()
             case "settings":

@@ -91,6 +91,11 @@ struct SidebarView: View {
                         .tag("node_editor")
                 }
 
+                NavigationLink(value: "workflow") {
+                    Label("Workflow", systemImage: "arrow.trianglehead.clockwise")
+                        .tag("workflow")
+                }
+
                 NavigationLink(value: "models") {
                     Label("Model Manager", systemImage: "cube.box")
                         .tag("models")
@@ -210,6 +215,8 @@ struct DetailView: View {
                 TimelineView(project: selectedProject)
             case "node_editor":
                 NodeEditorView()
+            case "workflow":
+                WorkflowProgressView()
             case "models":
                 ModelsView()
             case "settings":

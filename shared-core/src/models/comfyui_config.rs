@@ -112,6 +112,12 @@ impl ComfyUITemplateLibrary {
             Self::basic_text_to_image(),
             Self::basic_image_to_image(),
             Self::controlnet_workflow(),
+            Self::upscale_enhance(),
+            Self::style_transfer(),
+            Self::inpainting(),
+            Self::face_restore(),
+            Self::video_generation(),
+            Self::batch_processing(),
         ]
     }
 
@@ -233,6 +239,204 @@ impl ComfyUITemplateLibrary {
             workflow_json: HashMap::new(), // Simplified for now
         }
     }
+
+    /// Upscale and enhance template
+    fn upscale_enhance() -> ComfyUIWorkflowTemplate {
+        ComfyUIWorkflowTemplate {
+            name: "Upscale & Enhance".to_string(),
+            description: "Upscale images with AI enhancement and detail recovery".to_string(),
+            category: "Image Enhancement".to_string(),
+            required_inputs: vec![
+                ComfyUIInput {
+                    name: "image".to_string(),
+                    input_type: ComfyUIInputType::Image,
+                    default_value: None,
+                    required: true,
+                    description: "Image to upscale".to_string(),
+                },
+                ComfyUIInput {
+                    name: "scale_factor".to_string(),
+                    input_type: ComfyUIInputType::Float,
+                    default_value: Some("2.0".to_string()),
+                    required: false,
+                    description: "Upscaling factor (1.5-4x)".to_string(),
+                },
+                ComfyUIInput {
+                    name: "denoise_strength".to_string(),
+                    input_type: ComfyUIInputType::Float,
+                    default_value: Some("0.35".to_string()),
+                    required: false,
+                    description: "Denoising strength for enhancement (0.0-1.0)".to_string(),
+                },
+            ],
+            workflow_json: HashMap::new(),
+        }
+    }
+
+    /// Style transfer template
+    fn style_transfer() -> ComfyUIWorkflowTemplate {
+        ComfyUIWorkflowTemplate {
+            name: "Style Transfer".to_string(),
+            description: "Transfer artistic style from one image to another".to_string(),
+            category: "Artistic".to_string(),
+            required_inputs: vec![
+                ComfyUIInput {
+                    name: "content_image".to_string(),
+                    input_type: ComfyUIInputType::Image,
+                    default_value: None,
+                    required: true,
+                    description: "Content image to apply style to".to_string(),
+                },
+                ComfyUIInput {
+                    name: "style_prompt".to_string(),
+                    input_type: ComfyUIInputType::String,
+                    default_value: Some("".to_string()),
+                    required: true,
+                    description: "Style description or reference".to_string(),
+                },
+                ComfyUIInput {
+                    name: "style_strength".to_string(),
+                    input_type: ComfyUIInputType::Float,
+                    default_value: Some("0.75".to_string()),
+                    required: false,
+                    description: "Style transfer strength (0.0-1.0)".to_string(),
+                },
+            ],
+            workflow_json: HashMap::new(),
+        }
+    }
+
+    /// Inpainting template
+    fn inpainting() -> ComfyUIWorkflowTemplate {
+        ComfyUIWorkflowTemplate {
+            name: "Inpainting".to_string(),
+            description: "Fill in or modify specific regions of an image".to_string(),
+            category: "Image Editing".to_string(),
+            required_inputs: vec![
+                ComfyUIInput {
+                    name: "image".to_string(),
+                    input_type: ComfyUIInputType::Image,
+                    default_value: None,
+                    required: true,
+                    description: "Original image".to_string(),
+                },
+                ComfyUIInput {
+                    name: "mask".to_string(),
+                    input_type: ComfyUIInputType::Image,
+                    default_value: None,
+                    required: true,
+                    description: "Mask defining the region to inpaint".to_string(),
+                },
+                ComfyUIInput {
+                    name: "prompt".to_string(),
+                    input_type: ComfyUIInputType::String,
+                    default_value: Some("".to_string()),
+                    required: true,
+                    description: "What to generate in the masked region".to_string(),
+                },
+            ],
+            workflow_json: HashMap::new(),
+        }
+    }
+
+    /// Face restoration template
+    fn face_restore() -> ComfyUIWorkflowTemplate {
+        ComfyUIWorkflowTemplate {
+            name: "Face Restore".to_string(),
+            description: "Restore and enhance faces in images using CodeFormer or GFPGAN".to_string(),
+            category: "Image Enhancement".to_string(),
+            required_inputs: vec![
+                ComfyUIInput {
+                    name: "image".to_string(),
+                    input_type: ComfyUIInputType::Image,
+                    default_value: None,
+                    required: true,
+                    description: "Image containing faces to restore".to_string(),
+                },
+                ComfyUIInput {
+                    name: "restore_level".to_string(),
+                    input_type: ComfyUIInputType::Float,
+                    default_value: Some("0.7".to_string()),
+                    required: false,
+                    description: "Restoration strength (0.0-1.0)".to_string(),
+                },
+            ],
+            workflow_json: HashMap::new(),
+        }
+    }
+
+    /// Video generation template (AnimateDiff/SVD)
+    fn video_generation() -> ComfyUIWorkflowTemplate {
+        ComfyUIWorkflowTemplate {
+            name: "Video Generation".to_string(),
+            description: "Generate short video clips from text or image prompts".to_string(),
+            category: "Video".to_string(),
+            required_inputs: vec![
+                ComfyUIInput {
+                    name: "prompt".to_string(),
+                    input_type: ComfyUIInputType::String,
+                    default_value: Some("".to_string()),
+                    required: true,
+                    description: "Video content description".to_string(),
+                },
+                ComfyUIInput {
+                    name: "frame_count".to_string(),
+                    input_type: ComfyUIInputType::Integer,
+                    default_value: Some("16".to_string()),
+                    required: false,
+                    description: "Number of frames to generate".to_string(),
+                },
+                ComfyUIInput {
+                    name: "fps".to_string(),
+                    input_type: ComfyUIInputType::Integer,
+                    default_value: Some("8".to_string()),
+                    required: false,
+                    description: "Frames per second".to_string(),
+                },
+                ComfyUIInput {
+                    name: "motion_scale".to_string(),
+                    input_type: ComfyUIInputType::Float,
+                    default_value: Some("1.0".to_string()),
+                    required: false,
+                    description: "Motion intensity (0.5-2.0)".to_string(),
+                },
+            ],
+            workflow_json: HashMap::new(),
+        }
+    }
+
+    /// Batch processing template
+    fn batch_processing() -> ComfyUIWorkflowTemplate {
+        ComfyUIWorkflowTemplate {
+            name: "Batch Processing".to_string(),
+            description: "Process multiple images with the same settings".to_string(),
+            category: "Utility".to_string(),
+            required_inputs: vec![
+                ComfyUIInput {
+                    name: "prompt".to_string(),
+                    input_type: ComfyUIInputType::String,
+                    default_value: Some("".to_string()),
+                    required: true,
+                    description: "Base prompt for batch generation".to_string(),
+                },
+                ComfyUIInput {
+                    name: "batch_size".to_string(),
+                    input_type: ComfyUIInputType::Integer,
+                    default_value: Some("4".to_string()),
+                    required: false,
+                    description: "Number of images to generate".to_string(),
+                },
+                ComfyUIInput {
+                    name: "seed_variation".to_string(),
+                    input_type: ComfyUIInputType::Boolean,
+                    default_value: Some("true".to_string()),
+                    required: false,
+                    description: "Vary seed for each image".to_string(),
+                },
+            ],
+            workflow_json: HashMap::new(),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -270,5 +474,12 @@ mod tests {
         let templates = ComfyUITemplateLibrary::get_templates();
         assert!(!templates.is_empty());
         assert!(templates.iter().any(|t| t.name == "Basic Text-to-Image"));
+        assert!(templates.iter().any(|t| t.name == "Upscale & Enhance"));
+        assert!(templates.iter().any(|t| t.name == "Style Transfer"));
+        assert!(templates.iter().any(|t| t.name == "Inpainting"));
+        assert!(templates.iter().any(|t| t.name == "Face Restore"));
+        assert!(templates.iter().any(|t| t.name == "Video Generation"));
+        assert!(templates.iter().any(|t| t.name == "Batch Processing"));
+        assert_eq!(templates.len(), 9);
     }
 }

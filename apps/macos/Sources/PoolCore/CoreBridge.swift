@@ -259,6 +259,37 @@ import Foundation
         defer { pool_string_free(result) }
         return String(cString: result)
     }
+
+    // MARK: - Image Data Operations
+
+    /// Get image data from ComfyUI output.
+    ///
+    /// - Parameters:
+    ///   - filename: The image filename.
+    ///   - subfolder: The subfolder path (can be empty).
+    ///   - imgType: The image type ("output", "input", or "temp").
+    /// - Returns: A JSON string with base64-encoded image data.
+    @objc public static func getImageData(filename: String, subfolder: String, imgType: String) -> String {
+        guard let filenameC = filename.cString(using: .utf8),
+              let subfolderC = subfolder.cString(using: .utf8),
+              let imgTypeC = imgType.cString(using: .utf8) else {
+            return "{\"success\":false,\"error\":\"Failed to encode parameters as UTF-8\"}"
+        }
+
+        let result = filenameC.withUnsafeBytes { fPtr in
+            subfolderC.withUnsafeBytes { sPtr in
+                imgTypeC.withUnsafeBytes { tPtr in
+                    pool_get_image_data(
+                        fPtr.baseAddress!.assumingMemoryBound(to: CChar.self),
+                        sPtr.baseAddress!.assumingMemoryBound(to: CChar.self),
+                        tPtr.baseAddress!.assumingMemoryBound(to: CChar.self)
+                    )
+                }
+            }
+        }
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
 }
 
 // MARK: - C Function Declarations
@@ -374,3 +405,12 @@ func pool_get_output_path() -> UnsafeMutablePointer<CChar>
 /// Returns a JSON string with files array.
 @_silgen_name("pool_get_generated_files")
 func pool_get_generated_files(_ promptId: UnsafePointer<CChar>) -> UnsafeMutablePointer<CChar>
+
+/// Get image data from ComfyUI output.
+/// Returns a JSON string with base64-encoded image data.
+@_silgen_name("pool_get_image_data")
+func pool_get_image_data(
+    _ filename: UnsafePointer<CChar>,
+    _ subfolder: UnsafePointer<CChar>,
+    _ imgType: UnsafePointer<CChar>
+) -> UnsafeMutablePointer<CChar>

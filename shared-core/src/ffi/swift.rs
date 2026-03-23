@@ -865,6 +865,130 @@ pub extern "C" fn pool_get_generated_files(prompt_id: *const c_char) -> *mut c_c
     CString::new(result).unwrap().into_raw()
 }
 
+/// Get image data from ComfyUI output.
+///
+/// # Safety
+/// All parameters must be valid pointers.
+///
+/// # Returns
+/// JSON string with base64-encoded image data or error.
+#[no_mangle]
+pub extern "C" fn pool_get_image_data(
+    filename: *const c_char,
+    subfolder: *const c_char,
+    img_type: *const c_char,
+) -> *mut c_char {
+    let config = if let Ok(cfg) = get_comfyui_config().lock() {
+        cfg.clone()
+    } else {
+        crate::models::ComfyUIConfig::default()
+    };
+
+    let filename_str = if filename.is_null() {
+        "".to_string()
+    } else {
+        match unsafe { CStr::from_ptr(filename) }.to_str() {
+            Ok(s) => s.to_string(),
+            Err(_) => {
+                let error = r#"{"error":"invalid filename"}"#;
+                return CString::new(error).unwrap().into_raw();
+            }
+        }
+    };
+
+    let subfolder_str = if subfolder.is_null() {
+        "".to_string()
+    } else {
+        match unsafe { CStr::from_ptr(subfolder) }.to_str() {
+                Ok(s) => s.to_string(),
+                Err(_) => "".to_string(),
+            }
+        }
+    };
+
+    let img_type_str = if img_type.is_null() {
+        "output".to_string()
+    } else {
+        match unsafe { CStr::from_ptr(img_type) }.to_str() {
+            Ok(s) => s.to_string(),
+            Err(_) => "output".to_string(),
+            }
+        }
+    };
+
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        let client = crate::comfyui::ComfyUIClient::new(&config.server_url);
+
+        match client.get_image(&filename_str, &subfolder_str, &img_type_str).await {
+            Ok(data) => {
+                // Return base64 encoded data
+                use base64::{Engine as engine, base64::encode_config::with(engine.encode());
+                let encoded = engine.encode(&data);
+                format!(r#"{{"success":true,"data":"{}","len":{}}}"#, encoded, data.len())
+            }
+            Err(e) => {
+                format!(r#"{{"success":false,"error":"{}"}}"#, e)
+            }
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
+#[cfg(test)]
+///
+/// # Safety
+/// All parameters must be valid pointers.
+///
+/// # Returns
+/// Pointer to image data (bytes) and length,#[no_mangle]
+pub extern "C" fn pool_get_image_data(
+    filename: *const c_char,
+    subfolder: *const c_char,
+    img_type: *const c_char,
+    out_data: *mut *mut<u8>,
+    out_len: *mut usize,
+) -> *mut c_char {
+    let config = if let Ok(cfg) = get_comfyui_config().lock() {
+        cfg.clone()
+    } else {
+        crate::models::ComfyUIConfig::default()
+    };
+
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        let client = crate::comfyui::ComfyUIClient::new(&config.server_url);
+
+        match client.get_image(filename, subfolder, img_type).await {
+            Ok(data) => {
+                // Allocate buffer for image data
+                let buffer = Box::leak(Vec::from_raw_with_capacity(data.len()));
+                buffer.extend_from_slice(&data);
+                (buffer.as_ptr(), buffer.len())
+            }
+            Err(e) => {
+                let error = format!(r#"{{"error":"{}"}}"#, e);
+                CString::new(error).unwrap().into_raw()
+            }
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Free image data buffer allocated by pool_get_image_data.
+#[no_mangle]
+pub extern "C" fn pool_image_data_free(ptr: *mut u8, len: usize) {
+    if ptr.is_null() || len == 0 {
+        return;
+    }
+    unsafe {
+        let _ = Vec::from_raw_parts(ptr, len);
+        drop(_);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

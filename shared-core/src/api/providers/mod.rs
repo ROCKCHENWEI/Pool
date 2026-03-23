@@ -9,8 +9,8 @@ pub use kling::KlingAdapter;
 pub use vidu::ViduAdapter;
 pub use hailuo::HailuoAdapter;
 pub use seedance::SeedanceAdapter;
-pub use automatic1111::Automatic1111Adapter;
-pub use ollama::OllamaAdapter;
+pub use automatic1111::{Automatic1111Adapter, Txt2ImgRequest};
+pub use ollama::{OllamaAdapter, ChatRequest, ChatMessage};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

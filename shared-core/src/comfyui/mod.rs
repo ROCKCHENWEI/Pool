@@ -1,5 +1,5 @@
 mod client;
-mod websocket;
+pub mod websocket;
 mod workflow;
 
 pub use client::ComfyUIClient;

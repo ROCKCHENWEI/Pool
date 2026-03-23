@@ -189,6 +189,76 @@ import Foundation
         defer { pool_string_free(result) }
         return String(cString: result)
     }
+
+    // MARK: - WebSocket Operations
+
+    /// Connect to ComfyUI WebSocket for real-time updates.
+    ///
+    /// - Returns: A JSON string with connection status.
+    @objc public static func websocketConnect() -> String {
+        let result = pool_websocket_connect()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    /// Disconnect from ComfyUI WebSocket.
+    @objc public static func websocketDisconnect() {
+        pool_websocket_disconnect()
+    }
+
+    /// Check if WebSocket is connected.
+    ///
+    /// - Returns: A JSON string with connection status.
+    @objc public static func websocketIsConnected() -> String {
+        let result = pool_websocket_is_connected()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    /// Poll for progress updates (non-blocking).
+    ///
+    /// - Returns: A JSON string with progress updates array.
+    @objc public static func pollProgress() -> String {
+        let result = pool_poll_progress()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    /// Poll for execution updates (non-blocking).
+    ///
+    /// - Returns: A JSON string with execution updates array.
+    @objc public static func pollExecution() -> String {
+        let result = pool_poll_execution()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    // MARK: - Output Files Operations
+
+    /// Get the output directory path.
+    ///
+    /// - Returns: A JSON string with the path.
+    @objc public static func getOutputPath() -> String {
+        let result = pool_get_output_path()
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
+
+    /// Get list of generated files for a prompt ID.
+    ///
+    /// - Parameter promptId: The prompt/task ID.
+    /// - Returns: A JSON string with files array.
+    @objc public static func getGeneratedFiles(promptId: String) -> String {
+        guard let promptIdC = promptId.cString(using: .utf8) else {
+            return "{\"files\":[]}"
+        }
+
+        let result = promptIdC.withUnsafeBytes { ptr in
+            pool_get_generated_files(ptr.baseAddress!.assumingMemoryBound(to: CChar.self))
+        }
+        defer { pool_string_free(result) }
+        return String(cString: result)
+    }
 }
 
 // MARK: - C Function Declarations
@@ -266,3 +336,41 @@ func pool_workflow_get_node_types() -> UnsafeMutablePointer<CChar>
 /// Returns a JSON string with sample workflow.
 @_silgen_name("pool_workflow_create_sample")
 func pool_workflow_create_sample() -> UnsafeMutablePointer<CChar>
+
+// MARK: - WebSocket Progress C Functions
+
+/// Connect to ComfyUI WebSocket for real-time updates.
+/// Returns a JSON string with connection status.
+@_silgen_name("pool_websocket_connect")
+func pool_websocket_connect() -> UnsafeMutablePointer<CChar>
+
+/// Disconnect from ComfyUI WebSocket.
+@_silgen_name("pool_websocket_disconnect")
+func pool_websocket_disconnect()
+
+/// Check if WebSocket is connected.
+/// Returns a JSON string with connection status.
+@_silgen_name("pool_websocket_is_connected")
+func pool_websocket_is_connected() -> UnsafeMutablePointer<CChar>
+
+/// Poll for progress updates (non-blocking).
+/// Returns a JSON string with progress updates array.
+@_silgen_name("pool_poll_progress")
+func pool_poll_progress() -> UnsafeMutablePointer<CChar>
+
+/// Poll for execution updates (non-blocking).
+/// Returns a JSON string with execution updates array.
+@_silgen_name("pool_poll_execution")
+func pool_poll_execution() -> UnsafeMutablePointer<CChar>
+
+// MARK: - Output Files C Functions
+
+/// Get the output directory path.
+/// Returns a JSON string with the path.
+@_silgen_name("pool_get_output_path")
+func pool_get_output_path() -> UnsafeMutablePointer<CChar>
+
+/// Get list of generated files for a prompt ID.
+/// Returns a JSON string with files array.
+@_silgen_name("pool_get_generated_files")
+func pool_get_generated_files(_ promptId: UnsafePointer<CChar>) -> UnsafeMutablePointer<CChar>

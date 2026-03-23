@@ -569,6 +569,302 @@ pub extern "C" fn pool_workflow_create_sample() -> *mut c_char {
     }
 }
 
+// ============================================================================
+// Real-time Progress FFI Bindings
+// ============================================================================
+
+/// Global WebSocket connection for progress updates
+static WEBSOCKET_CLIENT: OnceLock<std::sync::Arc<tokio::sync::Mutex<Option<crate::comfyui::websocket::ComfyUIWebSocket>>>> = OnceLock::new();
+
+fn get_websocket_client() -> &'static std::sync::Arc<tokio::sync::Mutex<Option<crate::comfyui::websocket::ComfyUIWebSocket>>> {
+    WEBSOCKET_CLIENT.get_or_init(|| std::sync::Arc::new(tokio::sync::Mutex::new(None)))
+}
+
+/// Progress update information for FFI
+#[repr(C)]
+pub struct PoolProgressUpdate {
+    pub node: *mut c_char,
+    pub value: f32,
+    pub max: f32,
+}
+
+/// Execution update information for FFI
+#[repr(C)]
+pub struct PoolExecutionUpdate {
+    pub prompt_id: *mut c_char,
+    pub status: *mut c_char,
+    pub progress: f32,
+    pub message: *mut c_char,
+}
+
+/// Connect to ComfyUI WebSocket for real-time updates.
+///
+/// # Returns
+/// JSON string with connection status.
+#[no_mangle]
+pub extern "C" fn pool_websocket_connect() -> *mut c_char {
+    let config = if let Ok(cfg) = get_comfyui_config().lock() {
+        cfg.clone()
+    } else {
+        let error = r#"{"success":false,"error":"Failed to get config"}"#;
+        return CString::new(error).unwrap().into_raw();
+    };
+
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        let ws = crate::comfyui::websocket::ComfyUIWebSocket::new(&config.server_url);
+        match ws.connect().await {
+            Ok(_) => {
+                let mut client = get_websocket_client().lock().await;
+                *client = Some(ws);
+                r#"{"success":true,"message":"WebSocket connected"}"#.to_string()
+            }
+            Err(e) => {
+                format!(r#"{{"success":false,"error":"{}"}}"#, e)
+            }
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Disconnect WebSocket.
+#[no_mangle]
+pub extern "C" fn pool_websocket_disconnect() {
+    let runtime = get_runtime();
+    runtime.block_on(async {
+        let mut client = get_websocket_client().lock().await;
+        *client = None;
+    });
+}
+
+/// Check if WebSocket is connected.
+///
+/// # Returns
+/// JSON string with connection status.
+#[no_mangle]
+pub extern "C" fn pool_websocket_is_connected() -> *mut c_char {
+    let runtime = get_runtime();
+    let connected = runtime.block_on(async {
+        if let Some(ws) = get_websocket_client().lock().await.as_ref() {
+            ws.is_connected().await
+        } else {
+            false
+        }
+    });
+
+    let result = format!(r#"{{"connected":{}}}"#, connected);
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Try to receive a progress update (non-blocking).
+///
+/// # Returns
+/// JSON string with progress update or null if no update available.
+#[no_mangle]
+pub extern "C" fn pool_progress_try_recv() -> *mut c_char {
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        if let Some(ws) = get_websocket_client().lock().await.as_ref() {
+            let mut receiver = ws.subscribe_progress();
+            // Non-blocking try_recv
+            match receiver.try_recv() {
+                Ok(update) => {
+                    match serde_json::to_string(&update) {
+                        Ok(json) => json,
+                        Err(_) => r#"{"error":"failed to serialize"}"#.to_string()
+                    }
+                }
+                Err(tokio::sync::broadcast::error::TryRecvError::Empty) => {
+                    r#"{"available":false}"#.to_string()
+                }
+                Err(tokio::sync::broadcast::error::TryRecvError::Closed) => {
+                    r#"{"error":"channel closed"}"#.to_string()
+                }
+                Err(tokio::sync::broadcast::error::TryRecvError::Lagged(_)) => {
+                    r#"{"error":"lagged"}"#.to_string()
+                }
+            }
+        } else {
+            r#"{"error":"not connected"}"#.to_string()
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Try to receive an execution update (non-blocking).
+///
+/// # Returns
+/// JSON string with execution update or null if no update available.
+#[no_mangle]
+pub extern "C" fn pool_execution_try_recv() -> *mut c_char {
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        if let Some(ws) = get_websocket_client().lock().await.as_ref() {
+            let mut receiver = ws.subscribe_execution();
+            match receiver.try_recv() {
+                Ok(update) => {
+                    match serde_json::to_string(&update) {
+                        Ok(json) => json,
+                        Err(_) => r#"{"error":"failed to serialize"}"#.to_string()
+                    }
+                }
+                Err(tokio::sync::broadcast::error::TryRecvError::Empty) => {
+                    r#"{"available":false}"#.to_string()
+                }
+                Err(tokio::sync::broadcast::error::TryRecvError::Closed) => {
+                    r#"{"error":"channel closed"}"#.to_string()
+                }
+                Err(tokio::sync::broadcast::error::TryRecvError::Lagged(_)) => {
+                    r#"{"error":"lagged"}"#.to_string()
+                }
+            }
+        } else {
+            r#"{"error":"not connected"}"#.to_string()
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Execute a workflow with real-time progress updates.
+///
+/// # Safety
+/// The `workflow_json` parameter must be a valid null-terminated C string.
+///
+/// # Returns
+/// JSON string with execution ID for tracking progress.
+#[no_mangle]
+pub extern "C" fn pool_workflow_execute_async(workflow_json: *const c_char) -> *mut c_char {
+    if workflow_json.is_null() {
+        let error = r#"{"success":false,"error":"workflow_json is null"}"#;
+        return CString::new(error).unwrap().into_raw();
+    }
+
+    let json_str = match unsafe { CStr::from_ptr(workflow_json) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            let error = r#"{"success":false,"error":"invalid UTF-8 in workflow_json"}"#;
+            return CString::new(error).unwrap().into_raw();
+        }
+    };
+
+    let workflow: crate::models::Workflow = match serde_json::from_str(json_str) {
+        Ok(w) => w,
+        Err(e) => {
+            let error = format!(r#"{{"success":false,"error":"Failed to parse workflow: {}"}}"#, e);
+            return CString::new(error).unwrap().into_raw();
+        }
+    };
+
+    // Get ComfyUI config
+    let comfyui_config = if let Ok(cfg) = get_comfyui_config().lock() {
+        cfg.clone()
+    } else {
+        crate::models::ComfyUIConfig::default()
+    };
+
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        let executor = crate::engine::WorkflowExecutor::with_comfyui(&workflow, comfyui_config);
+
+        // Try to connect to ComfyUI
+        if let Err(e) = executor.connect_comfyui().await {
+            return format!(r#"{{"success":false,"error":"Failed to connect to ComfyUI: {}"}}"#, e);
+        }
+
+        // Start execution in background
+        let workflow_id = workflow.id.clone();
+
+        // For async execution, we spawn a task and return immediately
+        let _ = tokio::spawn(async move {
+            let _ = executor.execute().await;
+        });
+
+        format!(r#"{{"success":true,"execution_id":"{}"}}"#, workflow_id)
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Get the output path for generated images.
+///
+/// # Returns
+/// JSON string with output directory path.
+#[no_mangle]
+pub extern "C" fn pool_get_output_path() -> *mut c_char {
+    // Default output path
+    let output_path = std::env::var("POOL_OUTPUT_PATH")
+        .unwrap_or_else(|_| "./output".to_string());
+
+    let result = format!(r#"{{"path":"{}"}}"#, output_path);
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Get list of generated files for a prompt ID.
+///
+/// # Returns
+/// JSON string with array of file paths.
+#[no_mangle]
+pub extern "C" fn pool_get_generated_files(prompt_id: *const c_char) -> *mut c_char {
+    if prompt_id.is_null() {
+        let error = r#"{"files":[]}"#;
+        return CString::new(error).unwrap().into_raw();
+    }
+
+    let prompt_id_str = match unsafe { CStr::from_ptr(prompt_id) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            let error = r#"{"error":"invalid UTF-8"}"#;
+            return CString::new(error).unwrap().into_raw();
+        }
+    };
+
+    let config = if let Ok(cfg) = get_comfyui_config().lock() {
+        cfg.clone()
+    } else {
+        crate::models::ComfyUIConfig::default()
+    };
+
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        let client = crate::comfyui::ComfyUIClient::new(&config.server_url);
+
+        match client.get_history(prompt_id_str).await {
+            Ok(history) => {
+                let mut files: Vec<String> = Vec::new();
+
+                if let Some(outputs) = history.get("outputs").and_then(|o| o.as_object()) {
+                    for (_, output) in outputs {
+                        if let Some(images) = output.get("images").and_then(|i| i.as_array()) {
+                            for image in images {
+                                if let (Some(filename), Some(subfolder), Some(img_type)) = (
+                                    image.get("filename").and_then(|f| f.as_str()),
+                                    image.get("subfolder").and_then(|s| s.as_str()),
+                                    image.get("type").and_then(|t| t.as_str()),
+                                ) {
+                                    files.push(format!("{}/{}/{}", img_type, subfolder, filename));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                match serde_json::to_string(&files) {
+                    Ok(json) => format!(r#"{{"files":{}}}"#, json),
+                    Err(_) => r#"{"files":[]}"#.to_string()
+                }
+            }
+            Err(e) => {
+                format!(r#"{{"error":"{}","files":[]}}"#, e)
+            }
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

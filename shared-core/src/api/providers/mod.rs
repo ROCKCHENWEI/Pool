@@ -2,11 +2,15 @@ mod kling;
 mod vidu;
 mod hailuo;
 mod seedance;
+mod automatic1111;
+mod ollama;
 
 pub use kling::KlingAdapter;
 pub use vidu::ViduAdapter;
 pub use hailuo::HailuoAdapter;
 pub use seedance::SeedanceAdapter;
+pub use automatic1111::Automatic1111Adapter;
+pub use ollama::OllamaAdapter;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

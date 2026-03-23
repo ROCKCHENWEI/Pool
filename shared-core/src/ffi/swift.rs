@@ -934,6 +934,260 @@ pub extern "C" fn pool_get_image_data(
     CString::new(result).unwrap().into_raw()
 }
 
+// ============================================================================
+// Automatic1111 FFI Bindings
+// ============================================================================
+
+/// Global Automatic1111 adapter storage
+static A1111_ADAPTER: OnceLock<std::sync::Mutex<Option<crate::api::providers::Automatic1111Adapter>>> = OnceLock::new();
+
+fn get_a1111_adapter() -> &'static std::sync::Mutex<Option<crate::api::providers::Automatic1111Adapter>> {
+    A1111_ADAPTER.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+/// Initialize Automatic1111 adapter.
+///
+/// # Safety
+/// The `server_url` parameter must be a valid null-terminated C string.
+///
+/// # Returns
+/// JSON string with success status.
+#[no_mangle]
+pub extern "C" fn pool_a1111_init(server_url: *const c_char) -> *mut c_char {
+    let url = if server_url.is_null() {
+        "http://127.0.0.1:7860".to_string()
+    } else {
+        match unsafe { CStr::from_ptr(server_url) }.to_str() {
+            Ok(s) => s.to_string(),
+            Err(_) => {
+                let error = r#"{"success":false,"error":"invalid UTF-8 in server_url"}"#;
+                return CString::new(error).unwrap().into_raw();
+            }
+        }
+    };
+
+    let adapter = crate::api::providers::Automatic1111Adapter::new(&url);
+    if let Ok(mut guard) = get_a1111_adapter().lock() {
+        *guard = Some(adapter);
+    }
+
+    let result = r#"{"success":true}"#;
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Get available Automatic1111 models.
+///
+/// # Returns
+/// JSON string with array of models.
+#[no_mangle]
+pub extern "C" fn pool_a1111_get_models() -> *mut c_char {
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        let guard = get_a1111_adapter().lock();
+        if let Ok(g) = guard {
+            if let Some(adapter) = g.as_ref() {
+                match adapter.get_models().await {
+                    Ok(models) => {
+                        match serde_json::to_string(&models) {
+                            Ok(json) => format!(r#"{{"success":true,"models":{}}}"#, json),
+                            Err(_) => r#"{"success":false,"error":"Failed to serialize"}"#.to_string()
+                        }
+                    }
+                    Err(e) => format!(r#"{{"success":false,"error":"{}"}}"#, e)
+                }
+            } else {
+                r#"{"success":false,"error":"Adapter not initialized"}"#.to_string()
+            }
+        } else {
+            r#"{"success":false,"error":"Lock error"}"#.to_string()
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Generate image using Automatic1111.
+///
+/// # Safety
+/// The `prompt` parameter must be a valid null-terminated C string.
+///
+/// # Returns
+/// JSON string with generated image data (base64).
+#[no_mangle]
+pub extern "C" fn pool_a1111_txt2img(prompt: *const c_char, width: i32, height: i32, steps: i32) -> *mut c_char {
+    if prompt.is_null() {
+        let error = r#"{"success":false,"error":"prompt is null"}"#;
+        return CString::new(error).unwrap().into_raw();
+    }
+
+    let prompt_str = match unsafe { CStr::from_ptr(prompt) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            let error = r#"{"success":false,"error":"invalid UTF-8 in prompt"}"#;
+            return CString::new(error).unwrap().into_raw();
+        }
+    };
+
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        let guard = get_a1111_adapter().lock();
+        if let Ok(g) = guard {
+            if let Some(adapter) = g.as_ref() {
+                let request = crate::api::providers::Txt2ImgRequest::new(prompt_str)
+                    .with_dimensions(width, height)
+                    .with_steps(steps);
+
+                match adapter.text_to_image(request).await {
+                    Ok(response) => {
+                        if let Some(first_image) = response.images.first() {
+                            format!(r#"{{"success":true,"image":"{}"}}"#, first_image)
+                        } else {
+                            r#"{"success":false,"error":"No images generated"}"#.to_string()
+                        }
+                    }
+                    Err(e) => format!(r#"{{"success":false,"error":"{}"}}"#, e)
+                }
+            } else {
+                r#"{"success":false,"error":"Adapter not initialized"}"#.to_string()
+            }
+        } else {
+            r#"{"success":false,"error":"Lock error"}"#.to_string()
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
+// ============================================================================
+// Ollama FFI Bindings
+// ============================================================================
+
+/// Global Ollama adapter storage
+static OLLAMA_ADAPTER: OnceLock<std::sync::Mutex<Option<crate::api::providers::OllamaAdapter>>> = OnceLock::new();
+
+fn get_ollama_adapter() -> &'static std::sync::Mutex<Option<crate::api::providers::OllamaAdapter>> {
+    OLLAMA_ADAPTER.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+/// Initialize Ollama adapter.
+///
+/// # Safety
+/// The `server_url` parameter must be a valid null-terminated C string.
+///
+/// # Returns
+/// JSON string with success status.
+#[no_mangle]
+pub extern "C" fn pool_ollama_init(server_url: *const c_char) -> *mut c_char {
+    let url = if server_url.is_null() {
+        "http://localhost:11434".to_string()
+    } else {
+        match unsafe { CStr::from_ptr(server_url) }.to_str() {
+            Ok(s) => s.to_string(),
+            Err(_) => {
+                let error = r#"{"success":false,"error":"invalid UTF-8 in server_url"}"#;
+                return CString::new(error).unwrap().into_raw();
+            }
+        }
+    };
+
+    let adapter = crate::api::providers::OllamaAdapter::new(&url);
+    if let Ok(mut guard) = get_ollama_adapter().lock() {
+        *guard = Some(adapter);
+    }
+
+    let result = r#"{"success":true}"#;
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Get available Ollama models.
+///
+/// # Returns
+/// JSON string with array of models.
+#[no_mangle]
+pub extern "C" fn pool_ollama_get_models() -> *mut c_char {
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        let guard = get_ollama_adapter().lock();
+        if let Ok(g) = guard {
+            if let Some(adapter) = g.as_ref() {
+                match adapter.list_models().await {
+                    Ok(models) => {
+                        match serde_json::to_string(&models) {
+                            Ok(json) => format!(r#"{{"success":true,"models":{}}}"#, json),
+                            Err(_) => r#"{"success":false,"error":"Failed to serialize"}"#.to_string()
+                        }
+                    }
+                    Err(e) => format!(r#"{{"success":false,"error":"{}"}}"#, e)
+                }
+            } else {
+                r#"{"success":false,"error":"Adapter not initialized"}"#.to_string()
+            }
+        } else {
+            r#"{"success":false,"error":"Lock error"}"#.to_string()
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Enhance prompt using Ollama.
+///
+/// # Safety
+/// The `prompt` and `model` parameters must be valid null-terminated C strings.
+///
+/// # Returns
+/// JSON string with enhanced prompt.
+#[no_mangle]
+pub extern "C" fn pool_ollama_enhance_prompt(prompt: *const c_char, model: *const c_char, style: *const c_char) -> *mut c_char {
+    if prompt.is_null() || model.is_null() {
+        let error = r#"{"success":false,"error":"parameter is null"}"#;
+        return CString::new(error).unwrap().into_raw();
+    }
+
+    let prompt_str = match unsafe { CStr::from_ptr(prompt) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            let error = r#"{"success":false,"error":"invalid UTF-8 in prompt"}"#;
+            return CString::new(error).unwrap().into_raw();
+        }
+    };
+
+    let model_str = match unsafe { CStr::from_ptr(model) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            let error = r#"{"success":false,"error":"invalid UTF-8 in model"}"#;
+            return CString::new(error).unwrap().into_raw();
+        }
+    };
+
+    let style_str = if style.is_null() {
+        None
+    } else {
+        unsafe { CStr::from_ptr(style) }.to_str().ok()
+    };
+
+    let runtime = get_runtime();
+    let result = runtime.block_on(async {
+        let guard = get_ollama_adapter().lock();
+        if let Ok(g) = guard {
+            if let Some(adapter) = g.as_ref() {
+                match adapter.enhance_prompt(model_str, prompt_str, style_str).await {
+                    Ok(enhanced) => {
+                        format!(r#"{{"success":true,"prompt":"{}"}}"#, enhanced.replace("\"", "\\\""))
+                    }
+                    Err(e) => format!(r#"{{"success":false,"error":"{}"}}"#, e)
+                }
+            } else {
+                r#"{"success":false,"error":"Adapter not initialized"}"#.to_string()
+            }
+        } else {
+            r#"{"success":false,"error":"Lock error"}"#.to_string()
+        }
+    });
+
+    CString::new(result).unwrap().into_raw()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

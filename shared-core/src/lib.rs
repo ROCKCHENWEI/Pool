@@ -13,6 +13,7 @@
 //! - FFI bindings for macOS (Swift) and Windows (C#)
 
 pub mod api;
+pub mod batch;
 pub mod comfyui;
 pub mod db;
 pub mod engine;

@@ -18,79 +18,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tokio::sync::{Mutex, RwLock, Semaphore};
+use parking_lot::{Mutex, RwLock};
+use tokio::sync::Semaphore;
 use std::time::{Duration, Instant};
-
-/// Batch task status
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum BatchTaskStatus {
-    Pending,
-    Running,
-    Completed,
-    Failed,
-    Cancelled,
-}
-
-/// Batch task priority
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub enum BatchTaskPriority {
-    Low = 0,
-    Normal = 1,
-    High = 2,
-    Urgent = 3,
-}
-
-/// Batch task definition
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BatchTask {
-    /// Unique task ID
-    pub id: String,
-    /// Task name
-    pub name: String,
-    /// Task type
-    pub task_type: BatchTaskType,
-    /// Task priority
-    pub priority: BatchTaskPriority,
-    /// Task status
-    pub status: BatchTaskStatus,
-    /// Task parameters
-    pub params: serde_json::Value,
-    /// Created at
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    /// Started at
-    pub started_at: Option<chrono::DateTime<chrono::Utc>>,
-    /// Completed at
-    pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
-    /// Error message
-    pub error: Option<String>,
-    /// Progress percentage (0-100)
-    pub progress: f32,
-    /// Result data
-    pub result: Option<serde_json::Value>,
-}
-
-/// Batch task type
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum BatchTaskType {
-    TextToImage,
-    ImageToImage,
-    Upscale,
-    StyleTransfer,
-    Inpainting,
-    FaceRestore,
-    VideoGeneration,
-    Export,
-    Import,
-}
-
-/// Batch processing queue
-pub struct BatchQueue {
-    tasks: Arc<RwLock<HashMap<String, BatchTask>>>,
-    pending: Arc<Mutex<Vec<String>>>,
-    running: Arc<Mutex<HashMap<String, ()>>>,
-    max_concurrent: Arc<RwLock<usize>>,
-    semaphore: Arc<Semaphore>,
-}
 
 impl BatchQueue {
     /// Create a new batch queue

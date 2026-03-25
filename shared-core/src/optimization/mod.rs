@@ -3,12 +3,15 @@
 //! This module provides performance optimization utilities for the Pool project:
 //! - LRU cache for embeddings and API responses
 //! - Async executor for concurrent task scheduling
+//! - Image cache with memory management
 
 pub mod async_executor;
 pub mod cache;
+pub mod image_cache;
 
 pub use async_executor::{AsyncExecutor, TaskPriority, TaskHandle};
 pub use cache::{LruCache, CacheEntry, CacheStats};
+pub use image_cache::{ImageCache, ImageCacheEntry, ImageCacheStats, ImagePrefetcher};
 
 use std::sync::Arc;
 use std::time::Duration;

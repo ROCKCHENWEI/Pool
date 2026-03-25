@@ -107,24 +107,26 @@ impl BatchQueue {
     /// Add a task to the queue
     pub fn add_task(&self, task: BatchTask) -> Result<()> {
         let task_id = task.id.clone();
+        let priority = task.priority;
+
         {
             let mut tasks = self.tasks.write().unwrap();
-            tasks.insert(task_id.clone(), task.clone());
+            tasks.insert(task_id.clone(), task);
         }
 
         // Add to pending queue based on priority
         let mut pending = self.pending.lock().unwrap();
-        let position = pending.iter().position(|(_, t_id)| {
+        let position = pending.iter().position(|t_id| {
             let tasks = self.tasks.read().unwrap();
             let existing = tasks.get(t_id);
             if let Some(existing) = existing {
-                existing.priority < task.priority
+                existing.priority < priority
             } else {
                 false
             }
         });
 
-        pending.insert(position, task_id.clone());
+        pending.insert(position, task_id);
         Ok(())
     }
 

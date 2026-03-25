@@ -1131,14 +1131,14 @@ pub extern "C" fn pool_ollama_get_models() -> *mut c_char {
 }
 
 /// Enhance prompt using Ollama.
-///
-/// # Safety
-/// The `prompt` and `model` parameters must be valid null-terminated C strings.
-///
-/// # Returns
-/// JSON string with enhanced prompt.
-#[no_mangle]
-pub extern "C" fn pool_ollama_enhance_prompt(prompt: *const c_char, model: *const c_char, style: *const c_char) -> *mut c_char {
+    ///
+    /// # Safety
+    /// The `prompt` and `model` parameters must be valid null-terminated C strings.
+    ///
+    /// # Returns
+    /// JSON string with enhanced prompt.
+    #[no_mangle]
+    pub extern "C" fn pool_ollama_enhance_prompt(prompt: *const c_char, model: *const c_char, style: *const c_char) -> *mut c_char {
     if prompt.is_null() || model.is_null() {
         let error = r#"{"success":false,"error":"parameter is null"}"#;
         return CString::new(error).unwrap().into_raw();
@@ -1186,6 +1186,285 @@ pub extern "C" fn pool_ollama_enhance_prompt(prompt: *const c_char, model: *cons
     });
 
     CString::new(result).unwrap().into_raw()
+}
+
+// ============================================================================
+// Batch Processing FFI Bindings
+// ============================================================================
+
+/// Global batch queue storage
+static BATCH_QUEUE: OnceLock<std::sync::Mutex<Option<crate::batch::BatchQueue>>> = OnceLock::new();
+
+fn get_batch_queue() -> &'static std::sync::Mutex<Option<crate::batch::BatchQueue>> {
+    BATCH_QUEUE.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+/// Initialize batch queue.
+///
+/// # Returns
+/// JSON string with success status.
+#[no_mangle]
+pub extern "C" fn pool_batch_init(max_concurrent: usize) -> *mut c_char {
+    let queue = crate::batch::BatchQueue::new(max_concurrent);
+    if let Ok(mut guard) = get_batch_queue().lock() {
+        *guard = Some(queue);
+    }
+    let result = r#"{"success":true}"#;
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Add batch task.
+///
+/// # Safety
+/// The `task_json` parameter must be a valid null-terminated C string.
+///
+/// # Returns
+/// JSON string with task ID or error.
+#[no_mangle]
+    pub extern "C" fn pool_batch_add_task(task_json: *const c_char) -> *mut c_char {
+    if task_json.is_null() {
+        let error = r#"{"success":false,"error":"task_json is null"}"#;
+        return CString::new(error).unwrap().into_raw();
+    }
+
+    let task_str = match unsafe { CStr::from_ptr(task_json) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            let error = r#"{"success":false,"error":"invalid UTF-8 in task_json"}"#;
+            return CString::new(error).unwrap().into_raw();
+        }
+    };
+
+    let task: crate::batch::BatchTask = match serde_json::from_str(task_str) {
+        Ok(t) => t,
+        Err(e) => {
+            let error = format!(r#"{{"success":false,"error":"{}"}}"#, e);
+            return CString::new(error).unwrap().into_raw();
+        }
+    };
+
+    if let Ok(guard) = get_batch_queue().lock() {
+        if let Some(queue) = guard.as_ref() {
+            match queue.add_task(task) {
+                Ok(_) => {
+                    let result = format!(r#"{{"success":true,"task_id":"{}"}}"#,
+                        queue.get_task(&task.id).map(|t| t.id).unwrap_or_default());
+                    CString::new(result).unwrap().into_raw()
+                }
+                Err(e) => {
+                    let error = format!(r#"{{"success":false,"error":"{}"}}"#, e);
+                    CString::new(error).unwrap().into_raw()
+                }
+            }
+        } else {
+            let error = r#"{"success":false,"error":"Queue not initialized"}"#;
+            CString::new(error).unwrap().into_raw()
+        }
+    } else {
+        let error = r#"{"success":false,"error":"Lock error"}"#;
+        CString::new(error).unwrap().into_raw()
+    }
+}
+
+/// Get batch queue statistics.
+///
+/// # Returns
+/// JSON string with queue statistics.
+#[no_mangle]
+pub extern "C" fn pool_batch_get_stats() -> *mut c_char {
+    if let Ok(guard) = get_batch_queue().lock() {
+        if let Some(queue) = guard.as_ref() {
+            let stats = queue.get_stats();
+                match serde_json::to_string(&stats) {
+                    Ok(json) => {
+                        let result = format!(r#"{{"success":true,"stats":{}}}"#, json);
+                        CString::new(result).unwrap().into_raw()
+                    }
+                    Err(e) => {
+                        let error = format!(r#"{{"success":false,"error":"{}"}}"#, e);
+                        CString::new(error).unwrap().into_raw()
+                    }
+                }
+        } else {
+            let error = r#"{"success":false,"error":"Queue not initialized"}"#;
+            CString::new(error).unwrap().into_raw()
+        }
+    } else {
+        let error = r#"{"success":false,"error":"Lock error"}"#;
+        CString::new(error).unwrap().into_raw()
+    }
+}
+
+/// Get all batch tasks.
+///
+/// # Returns
+/// JSON string with array of tasks.
+#[no_mangle]
+pub extern "C" fn pool_batch_get_tasks() -> *mut c_char {
+    if let Ok(guard) = get_batch_queue().lock() {
+        if let Some(queue) = guard.as_ref() {
+            let tasks = queue.get_all_tasks();
+            match serde_json::to_string(&tasks) {
+                Ok(json) => {
+                    let result = format!(r#"{{"success":true,"tasks":{}}}"#, json);
+                    CString::new(result).unwrap().into_raw()
+                }
+                Err(e) => {
+                    let error = format!(r#"{{"success":false,"error":"{}"}}"#, e);
+                    CString::new(error).unwrap().into_raw()
+                }
+            }
+        } else {
+            let error = r#"{"success":false,"error":"Queue not initialized"}"#;
+            CString::new(error).unwrap().into_raw()
+        }
+    } else {
+        let error = r#"{"success":false,"error":"Lock error"}"#;
+        CString::new(error).unwrap().into_raw()
+    }
+}
+
+/// Cancel batch task.
+///
+/// # Safety
+/// The `task_id` parameter must be a valid null-terminated C string.
+///
+/// # Returns
+/// JSON string with success status.
+#[no_mangle]
+pub extern "C" fn pool_batch_cancel_task(task_id: *const c_char) -> *mut c_char {
+    if task_id.is_null() {
+        let error = r#"{"success":false,"error":"task_id is null"}"#;
+        return CString::new(error).unwrap().into_raw();
+    }
+
+    let id_str = match unsafe { CStr::from_ptr(task_id) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            let error = r#"{"success":false,"error":"invalid UTF-8 in task_id"}"#;
+            return CString::new(error).unwrap().into_raw();
+        }
+    };
+
+    if let Ok(guard) = get_batch_queue().lock() {
+        if let Some(queue) = guard.as_ref() {
+            match queue.cancel_task(id_str) {
+                Ok(_) => {
+                    let result = r#"{"success":true}"#;
+                    CString::new(result).unwrap().into_raw()
+                }
+                Err(e) => {
+                    let error = format!(r#"{{"success":false,"error":"{}"}}"#, e);
+                    CString::new(error).unwrap().into_raw()
+                }
+            }
+        } else {
+            let error = r#"{"success":false,"error":"Queue not initialized"}"#;
+            CString::new(error).unwrap().into_raw()
+        }
+    } else {
+        let error = r#"{"success":false,"error":"Lock error"}"#;
+        CString::new(error).unwrap().into_raw()
+    }
+}
+
+// ============================================================================
+// Image Cache FFI Bindings
+// ============================================================================
+
+/// Global image cache storage
+static IMAGE_CACHE: OnceLock<std::sync::Mutex<Option<crate::optimization::ImageCache>>> = OnceLock::new();
+
+fn get_image_cache() -> &'static std::sync::Mutex<Option<crate::optimization::ImageCache>> {
+    IMAGE_CACHE.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+/// Initialize image cache.
+///
+/// # Returns
+/// JSON string with success status.
+#[no_mangle]
+pub extern "C" fn pool_cache_init(max_size: usize, ttl_secs: u64) -> *mut c_char {
+    let cache = crate::optimization::ImageCache::new(
+        max_size,
+        std::time::Duration::from_secs(ttl_secs),
+    );
+    if let Ok(mut guard) = get_image_cache().lock() {
+        *guard = Some(cache);
+    }
+    let result = r#"{"success":true}"#;
+    CString::new(result).unwrap().into_raw()
+}
+
+/// Get image cache statistics.
+///
+/// # Returns
+/// JSON string with cache statistics.
+#[no_mangle]
+pub extern "C" fn pool_cache_get_stats() -> *mut c_char {
+    if let Ok(guard) = get_image_cache().lock() {
+        if let Some(cache) = guard.as_ref() {
+            let stats = cache.stats();
+            match serde_json::to_string(&stats) {
+                Ok(json) => {
+                    let result = format!(r#"{{"success":true,"stats":{}}}"#, json);
+                    CString::new(result).unwrap().into_raw()
+                }
+                Err(e) => {
+                    let error = format!(r#"{{"success":false,"error":"{}"}}"#, e);
+                    CString::new(error).unwrap().into_raw()
+                }
+            }
+        } else {
+            let error = r#"{"success":false,"error":"Cache not initialized"}"#;
+            CString::new(error).unwrap().into_raw()
+        }
+    } else {
+        let error = r#"{"success":false,"error":"Lock error"}"#;
+        CString::new(error).unwrap().into_raw()
+    }
+}
+
+/// Clear image cache.
+///
+/// # Returns
+/// JSON string with success status.
+#[no_mangle]
+pub extern "C" fn pool_cache_clear() -> *mut c_char {
+    if let Ok(guard) = get_image_cache().lock() {
+        if let Some(cache) = guard.as_ref() {
+            cache.clear();
+            let result = r#"{"success":true}"#;
+            CString::new(result).unwrap().into_raw()
+        } else {
+            let error = r#"{"success":false,"error":"Cache not initialized"}"#;
+            CString::new(error).unwrap().into_raw()
+        }
+    } else {
+        let error = r#"{"success":false,"error":"Lock error"}"#;
+        CString::new(error).unwrap().into_raw()
+    }
+}
+
+/// Clear expired cache entries.
+///
+/// # Returns
+/// JSON string with number of entries cleared.
+#[no_mangle]
+pub extern "C" fn pool_cache_clear_expired() -> *mut c_char {
+    if let Ok(guard) = get_image_cache().lock() {
+        if let Some(cache) = guard.as_ref() {
+            let cleared = cache.clear_expired();
+            let result = format!(r#"{{"success":true,"cleared":{}}}"#, cleared);
+            CString::new(result).unwrap().into_raw()
+        } else {
+            let error = r#"{"success":false,"error":"Cache not initialized"}"#;
+            CString::new(error).unwrap().into_raw()
+        }
+    } else {
+        let error = r#"{"success":false,"error":"Lock error"}"#;
+        CString::new(error).unwrap().into_raw()
+    }
 }
 
 #[cfg(test)]

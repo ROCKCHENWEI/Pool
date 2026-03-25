@@ -1247,8 +1247,8 @@ pub extern "C" fn pool_batch_init(max_concurrent: usize) -> *mut c_char {
         if let Some(queue) = guard.as_ref() {
             match queue.add_task(task) {
                 Ok(_) => {
-                    let result = format!(r#"{{"success":true,"task_id":"{}"}}"#,
-                        queue.get_task(&task.id).map(|t| t.id).unwrap_or_default());
+                    let result = format!(r#"{{"success":true,"task_id":"{}"}}"#, task.id);
+                }
                     CString::new(result).unwrap().into_raw()
                 }
                 Err(e) => {

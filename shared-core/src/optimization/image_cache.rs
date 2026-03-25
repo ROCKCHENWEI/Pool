@@ -2,6 +2,7 @@
 //!
 //! Provides specialized caching for image data with memory management
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use parking_lot::RwLock;
@@ -39,7 +40,7 @@ impl ImageCacheEntry {
 }
 
 /// Image cache statistics
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ImageCacheStats {
     pub total_entries: usize,
     pub total_size_bytes: usize,

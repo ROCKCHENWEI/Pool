@@ -16,10 +16,12 @@ pub type TaskId = u64;
 
 /// Task priority levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default)]
 pub enum TaskPriority {
     /// Low priority - background tasks
     Low = 0,
     /// Normal priority - default
+    #[default]
     Normal = 1,
     /// High priority - user-initiated tasks
     High = 2,
@@ -27,11 +29,6 @@ pub enum TaskPriority {
     Critical = 3,
 }
 
-impl Default for TaskPriority {
-    fn default() -> Self {
-        Self::Normal
-    }
-}
 
 /// Task status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,6 +81,7 @@ impl TaskHandle {
 }
 
 /// Internal task representation
+#[allow(dead_code)]
 struct InternalTask {
     id: TaskId,
     name: String,

@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use reqwest::Client;
 use super::{VideoGeneratorAdapter, VideoGenerationConfig, GenerationTask, TaskStatus};
 
+#[allow(dead_code)]
 pub struct ViduAdapter {
     api_key: String,
     client: Client,

@@ -138,6 +138,7 @@ impl<V> CacheNode<V> {
 }
 
 /// LRU Cache with size limit and TTL support
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct LruCache<K, V> {
     /// Maximum size in bytes
@@ -173,11 +174,7 @@ where
 
     /// Get a value from the cache (read-only, doesn't update access order)
     pub fn get(&self, key: &K) -> Option<V> {
-        if let Some(node) = self.entries.get(key) {
-            Some(node.value.clone())
-        } else {
-            None
-        }
+        self.entries.get(key).map(|node| node.value.clone())
     }
 
     /// Get a value from the cache and update access statistics

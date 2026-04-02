@@ -42,6 +42,7 @@ impl Default for OptimizationConfig {
 }
 
 /// Optimization manager that coordinates caching and task execution
+#[allow(dead_code)]
 pub struct OptimizationManager {
     config: OptimizationConfig,
     embedding_cache: Arc<RwLock<LruCache<String, Vec<f32>>>>,

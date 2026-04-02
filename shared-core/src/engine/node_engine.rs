@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use std::collections::{HashMap, VecDeque};
 
-use crate::models::{Connection, Node, NodeType};
+use crate::models::{Connection, Node};
 
 pub struct NodeEngine {
     nodes: HashMap<String, Node>,
@@ -98,7 +98,7 @@ impl NodeEngine {
     }
 
     /// Convert a single node to ComfyUI JSON format
-    fn node_to_comfyui_json(&self, node: &Node, index: usize) -> serde_json::Value {
+    fn node_to_comfyui_json(&self, node: &Node, _index: usize) -> serde_json::Value {
         use crate::models::NodeType;
         use serde_json::json;
 

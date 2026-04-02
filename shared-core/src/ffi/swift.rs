@@ -327,8 +327,10 @@ pub extern "C" fn pool_comfyui_get_templates() -> *mut c_char {
 // ============================================================================
 
 /// Global workflow execution manager
+#[allow(dead_code)]
 static WORKFLOW_MANAGER: OnceLock<std::sync::Arc<crate::engine::WorkflowExecutionManager>> = OnceLock::new();
 
+#[allow(dead_code)]
 fn get_workflow_manager() -> &'static std::sync::Arc<crate::engine::WorkflowExecutionManager> {
     WORKFLOW_MANAGER.get_or_init(|| {
         std::sync::Arc::new(crate::engine::WorkflowExecutionManager::new())
@@ -407,8 +409,6 @@ pub extern "C" fn pool_workflow_execute(workflow_json: *const c_char) -> *mut c_
 /// JSON string with array of node type information.
 #[no_mangle]
 pub extern "C" fn pool_workflow_get_node_types() -> *mut c_char {
-    use crate::models::NodeType;
-
     let node_types: Vec<serde_json::Value> = vec![
         serde_json::json!({"name": "TextPrompt", "category": "Input", "description": "Text input for prompts"}),
         serde_json::json!({"name": "VISCCore", "category": "AI", "description": "VISC Core processing"}),

@@ -140,7 +140,7 @@ impl ComfyUIClient {
 
         // Wait for completion
         let prompt_id_clone = prompt_id.clone();
-        let _result = tokio::time::timeout(
+        tokio::time::timeout(
             std::time::Duration::from_secs(timeout_secs),
             async move {
                 loop {

@@ -8,7 +8,6 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
-use tokio_stream::StreamExt;
 
 /// Ollama adapter for local LLM inference
 pub struct OllamaAdapter {
@@ -168,7 +167,7 @@ impl OllamaAdapter {
     ) -> Result<String> {
         let style_hint = style.unwrap_or("detailed and vivid");
 
-        let system_prompt = format!(
+        let _system_prompt = format!(
             "You are a prompt enhancement assistant. Take the user's basic prompt and \
              enhance it to be more {}, descriptive, and suitable for AI image generation. \
              Return ONLY the enhanced prompt without any explanations or quotes.",

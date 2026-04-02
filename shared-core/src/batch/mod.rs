@@ -104,6 +104,7 @@ pub struct BatchQueue {
     tasks: Arc<RwLock<HashMap<String, BatchTask>>>,
     pending: Arc<Mutex<Vec<String>>>,
     running: Arc<Mutex<HashMap<String, ()>>>,
+    #[allow(dead_code)]
     max_concurrent: usize,
     semaphore: Arc<Semaphore>,
 }

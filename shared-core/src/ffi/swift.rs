@@ -1243,12 +1243,12 @@ pub extern "C" fn pool_batch_init(max_concurrent: usize) -> *mut c_char {
         }
     };
 
+    let task_id = task.id.clone();
     if let Ok(guard) = get_batch_queue().lock() {
         if let Some(queue) = guard.as_ref() {
             match queue.add_task(task) {
                 Ok(_) => {
-                    let result = format!(r#"{{"success":true,"task_id":"{}"}}"#, task.id);
-                }
+                    let result = format!(r#"{{"success":true,"task_id":"{}"}}"#, task_id);
                     CString::new(result).unwrap().into_raw()
                 }
                 Err(e) => {

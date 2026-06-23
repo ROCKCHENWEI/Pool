@@ -1,0 +1,6 @@
+[workspace]
+members = ["shared-core", "pool-cli"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"

@@ -1,0 +1,9 @@
+[package]
+name = "pool-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+pool-core = { path = "../shared-core" }
+serde_json = "1.0"

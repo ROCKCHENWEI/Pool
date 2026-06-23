@@ -5266,6 +5266,11 @@ fn mcp_tool_http_request(
             path: path_with_project("/api/runtime-handoff", &project_slug),
             body: None,
         }),
+        "pool_runtime_handoff_packages" => Ok(McpHttpToolRequest {
+            method: "GET",
+            path: path_with_project("/api/handoff-packages", &project_slug),
+            body: None,
+        }),
         "pool_output_packages" => Ok(McpHttpToolRequest {
             method: "GET",
             path: path_with_project("/api/output-packages", &project_slug),
@@ -5867,6 +5872,11 @@ fn mcp_tool_definitions() -> Vec<Value> {
         mcp_tool(
             "pool_runtime_handoff",
             "Read a machine-readable Agent/Hermes/operator handoff runbook derived from runtime state.",
+            json!({"type":"object","properties":mcp_project_property()}),
+        ),
+        mcp_tool(
+            "pool_runtime_handoff_packages",
+            "Read generated runtime handoff package files, operator checklist, Agent entrypoint, and MCP resources.",
             json!({"type":"object","properties":mcp_project_property()}),
         ),
         mcp_tool(

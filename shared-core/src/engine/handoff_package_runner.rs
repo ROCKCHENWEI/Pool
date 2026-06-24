@@ -778,12 +778,7 @@ fn handoff_dir_from_path(path: &str) -> Option<String> {
 fn handoff_path_with_file(paths: &[String], file_name: &str) -> Option<String> {
     paths
         .iter()
-        .find(|path| {
-            Path::new(path)
-                .file_name()
-                .and_then(|name| name.to_str())
-                == Some(file_name)
-        })
+        .find(|path| Path::new(path).file_name().and_then(|name| name.to_str()) == Some(file_name))
         .cloned()
 }
 
@@ -948,11 +943,11 @@ mod tests {
         assert_eq!(catalog.summary.indexed_files, 9);
         let package = &catalog.packages[0];
         assert_eq!(package.status, "ready");
-        assert_eq!(package.manifest_path.as_deref(), Some(report.manifest_path.as_str()));
         assert_eq!(
-            package.agent_entrypoint["first_file"],
-            report.manifest_path
+            package.manifest_path.as_deref(),
+            Some(report.manifest_path.as_str())
         );
+        assert_eq!(package.agent_entrypoint["first_file"], report.manifest_path);
         assert!(package
             .operator_checklist
             .as_array()

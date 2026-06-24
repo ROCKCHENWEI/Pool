@@ -30,8 +30,10 @@ enum Command {
     Adapters,
     IntegrationReadiness,
     ProviderContracts { provider_id: Option<String> },
+    ProviderConformancePackages,
     ProviderConformancePackage(ProviderConformancePackageArgs),
     SoftwareContracts { adapter_id: Option<String> },
+    SoftwareConformancePackages,
     SoftwareConformancePackage(SoftwareConformancePackageArgs),
     Tasks,
     Events(EventsArgs),
@@ -41,8 +43,13 @@ enum Command {
     RuntimeExecutionPlanRunNext(RuntimeRunNextArgs),
     RuntimeHandoff,
     RuntimeHandoffPackages,
+    CoreArchitectureReadiness,
+    CoreArchitectureGate(CoreArchitectureGateArgs),
+    CoreArchitecturePackages,
+    CoreArchitecturePackage(CoreArchitecturePackageArgs),
     PrdReadiness,
     PrdCompletionGate(PrdCompletionGateArgs),
+    PrdCompletionPackages,
     PrdCompletionPackage(PrdCompletionPackageArgs),
     RuntimeGraph,
     WorkflowContext { workflow_id: Option<String> },
@@ -68,6 +75,7 @@ enum Command {
     ProductionEvidenceTaskClaim(ProductionEvidenceTaskClaimArgs),
     ProductionEvidenceRunPlan(ProductionEvidenceRunPlanArgs),
     ProductionEvidenceHandoff(ProductionEvidenceHandoffArgs),
+    ProductionEvidenceHandoffPackages,
     ProductionEvidenceHandoffPackage(ProductionEvidenceHandoffPackageArgs),
     ProductionEvidenceTemplate(ProductionEvidenceTemplateArgs),
     ProductionEvidenceItemTemplate(ProductionEvidenceItemTemplateArgs),
@@ -88,7 +96,9 @@ enum Command {
     OutputPackage(OutputPackageArgs),
     OutputResult(OutputResultArgs),
     HandoffPackage(HandoffPackageArgs),
+    IntegrationConformancePackages,
     IntegrationConformancePackage(IntegrationConformancePackageArgs),
+    AgentConformancePackages,
     AgentConformancePackage(AgentConformancePackageArgs),
     AgentSession(AgentSessionArgs),
     AgentTranscript { session_id: String },
@@ -374,6 +384,20 @@ struct PrdCompletionPackageArgs {
     output_dir: Option<String>,
     source: Option<String>,
     include_snapshot: bool,
+}
+
+#[derive(Debug, Clone)]
+struct CoreArchitecturePackageArgs {
+    node_id: Option<String>,
+    title: Option<String>,
+    output_dir: Option<String>,
+    source: Option<String>,
+    include_snapshot: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+struct CoreArchitectureGateArgs {
+    require_ready: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -983,9 +1007,15 @@ fn parse_command(args: Vec<String>) -> Result<Command> {
         "provider-contracts" | "provider-contract" => Ok(Command::ProviderContracts {
             provider_id: args.get(1).cloned(),
         }),
+        "provider-conformance-packages" | "provider-conformance-catalog" => {
+            Ok(Command::ProviderConformancePackages)
+        }
         "provider-conformance-package" | "provider-conformance" | "provider-runbook-package" => {
             parse_provider_conformance_package(args.into_iter().skip(1).collect())
                 .map(Command::ProviderConformancePackage)
+        }
+        "integration-conformance-packages" | "integration-conformance-catalog" => {
+            Ok(Command::IntegrationConformancePackages)
         }
         "integration-conformance-package"
         | "integration-conformance"
@@ -996,6 +1026,9 @@ fn parse_command(args: Vec<String>) -> Result<Command> {
         "software-contracts" | "software-contract" => Ok(Command::SoftwareContracts {
             adapter_id: args.get(1).cloned(),
         }),
+        "software-conformance-packages" | "software-conformance-catalog" => {
+            Ok(Command::SoftwareConformancePackages)
+        }
         "software-conformance-package" | "software-conformance" | "software-runbook-package" => {
             parse_software_conformance_package(args.into_iter().skip(1).collect())
                 .map(Command::SoftwareConformancePackage)
@@ -1011,10 +1044,27 @@ fn parse_command(args: Vec<String>) -> Result<Command> {
         }
         "runtime-handoff" | "handoff" => Ok(Command::RuntimeHandoff),
         "runtime-handoff-packages" | "handoff-packages" => Ok(Command::RuntimeHandoffPackages),
+        "core-architecture-readiness" | "core-readiness" | "architecture-readiness" => {
+            Ok(Command::CoreArchitectureReadiness)
+        }
+        "core-architecture-gate" | "core-gate" | "architecture-gate" => {
+            parse_core_architecture_gate(args.into_iter().skip(1).collect())
+                .map(Command::CoreArchitectureGate)
+        }
+        "core-architecture-packages" | "core-packages" | "architecture-packages" => {
+            Ok(Command::CoreArchitecturePackages)
+        }
+        "core-architecture-package" | "core-package" | "architecture-package" => {
+            parse_core_architecture_package(args.into_iter().skip(1).collect())
+                .map(Command::CoreArchitecturePackage)
+        }
         "prd-readiness" | "readiness" | "prd-audit" => Ok(Command::PrdReadiness),
         "prd-completion-gate" | "prd-completion" | "completion-gate" => {
             parse_prd_completion_gate(args.into_iter().skip(1).collect())
                 .map(Command::PrdCompletionGate)
+        }
+        "prd-completion-packages" | "completion-packages" | "prd-proof-packages" => {
+            Ok(Command::PrdCompletionPackages)
         }
         "prd-completion-package" | "completion-package" | "prd-proof-package" => {
             parse_prd_completion_package(args.into_iter().skip(1).collect())
@@ -1103,6 +1153,9 @@ fn parse_command(args: Vec<String>) -> Result<Command> {
             parse_production_evidence_handoff(args.into_iter().skip(1).collect())
                 .map(Command::ProductionEvidenceHandoff)
         }
+        "production-evidence-handoff-packages"
+        | "production-evidence-package-catalog"
+        | "production-evidence-proof-packages" => Ok(Command::ProductionEvidenceHandoffPackages),
         "production-evidence-handoff-package" | "production-evidence-package-files" => {
             parse_production_evidence_handoff_package(args.into_iter().skip(1).collect())
                 .map(Command::ProductionEvidenceHandoffPackage)
@@ -1182,6 +1235,9 @@ fn parse_command(args: Vec<String>) -> Result<Command> {
         }
         "handoff-package" | "runtime-handoff-package" => {
             parse_handoff_package(args.into_iter().skip(1).collect()).map(Command::HandoffPackage)
+        }
+        "agent-conformance-packages" | "agent-conformance-catalog" => {
+            Ok(Command::AgentConformancePackages)
         }
         "agent-conformance-package" | "agent-conformance" | "agent-runbook-package" => {
             parse_agent_conformance_package(args.into_iter().skip(1).collect())
@@ -4352,6 +4408,19 @@ fn parse_prd_completion_gate(args: Vec<String>) -> Result<PrdCompletionGateArgs>
     Ok(parsed)
 }
 
+fn parse_core_architecture_gate(args: Vec<String>) -> Result<CoreArchitectureGateArgs> {
+    let mut parsed = CoreArchitectureGateArgs::default();
+    for arg in args {
+        match arg.as_str() {
+            "--require-ready" | "--require-complete" | "--fail-if-incomplete" => {
+                parsed.require_ready = true
+            }
+            value => bail!("unknown core-architecture-gate option: {value}"),
+        }
+    }
+    Ok(parsed)
+}
+
 fn parse_prd_completion_package(args: Vec<String>) -> Result<PrdCompletionPackageArgs> {
     let mut package = PrdCompletionPackageArgs {
         node_id: None,
@@ -4397,6 +4466,51 @@ fn parse_prd_completion_package(args: Vec<String>) -> Result<PrdCompletionPackag
     Ok(package)
 }
 
+fn parse_core_architecture_package(args: Vec<String>) -> Result<CoreArchitecturePackageArgs> {
+    let mut package = CoreArchitecturePackageArgs {
+        node_id: None,
+        title: None,
+        output_dir: None,
+        source: None,
+        include_snapshot: true,
+    };
+    let mut index = 0;
+
+    while index < args.len() {
+        match args[index].as_str() {
+            "--node-id" => {
+                index += 1;
+                package.node_id = Some(args.get(index).context("--node-id requires id")?.clone());
+            }
+            "--title" => {
+                index += 1;
+                package.title = Some(args.get(index).context("--title requires text")?.clone());
+            }
+            "--output-dir" => {
+                index += 1;
+                package.output_dir = Some(
+                    args.get(index)
+                        .context("--output-dir requires path")?
+                        .clone(),
+                );
+            }
+            "--source" => {
+                index += 1;
+                package.source = Some(args.get(index).context("--source requires value")?.clone());
+            }
+            value if value.starts_with("--source=") => {
+                package.source = Some(value.trim_start_matches("--source=").to_string());
+            }
+            "--include-snapshot" => package.include_snapshot = true,
+            "--no-snapshot" => package.include_snapshot = false,
+            value => bail!("unknown core-architecture-package option: {value}"),
+        }
+        index += 1;
+    }
+
+    Ok(package)
+}
+
 fn dispatch(cli: Cli) -> Result<RuntimeHttpResponse> {
     let server = runtime_server(&cli);
     match cli.command {
@@ -4419,6 +4533,10 @@ fn dispatch(cli: Cli) -> Result<RuntimeHttpResponse> {
         Command::ProviderContracts { provider_id } => {
             server.handle_path(&provider_contracts_path(provider_id.as_deref()))
         }
+        Command::ProviderConformancePackages => server.handle_path(&path_with_project(
+            "/api/provider-conformance-packages",
+            &cli.project_slug,
+        )),
         Command::ProviderConformancePackage(args) => {
             if cli.project_slug.as_deref() == Some("*") {
                 bail!("provider-conformance-package requires a concrete --project slug, not *");
@@ -4444,6 +4562,10 @@ fn dispatch(cli: Cli) -> Result<RuntimeHttpResponse> {
         Command::SoftwareContracts { adapter_id } => {
             server.handle_path(&software_contracts_path(adapter_id.as_deref()))
         }
+        Command::SoftwareConformancePackages => server.handle_path(&path_with_project(
+            "/api/software-conformance-packages",
+            &cli.project_slug,
+        )),
         Command::SoftwareConformancePackage(args) => {
             if cli.project_slug.as_deref() == Some("*") {
                 bail!("software-conformance-package requires a concrete --project slug, not *");
@@ -4491,12 +4613,38 @@ fn dispatch(cli: Cli) -> Result<RuntimeHttpResponse> {
             "/api/handoff-packages",
             &cli.project_slug,
         )),
+        Command::CoreArchitectureReadiness => server.handle_path(&path_with_project(
+            "/api/core-architecture-readiness",
+            &cli.project_slug,
+        )),
+        Command::CoreArchitectureGate(args) => {
+            server.handle_path(&core_architecture_gate_path(&cli.project_slug, &args))
+        }
+        Command::CoreArchitecturePackages => server.handle_path(&path_with_project(
+            "/api/core-architecture-packages",
+            &cli.project_slug,
+        )),
+        Command::CoreArchitecturePackage(args) => {
+            if cli.project_slug.as_deref() == Some("*") {
+                bail!("core-architecture-package requires a concrete --project slug, not *");
+            }
+            let body = core_architecture_package_body(&cli.project_slug, args);
+            server.handle_request_with_body(
+                "POST",
+                "/api/core-architecture-package",
+                &body.to_string(),
+            )
+        }
         Command::PrdReadiness => {
             server.handle_path(&path_with_project("/api/prd-readiness", &cli.project_slug))
         }
         Command::PrdCompletionGate(args) => {
             server.handle_path(&prd_completion_gate_path(&cli.project_slug, &args))
         }
+        Command::PrdCompletionPackages => server.handle_path(&path_with_project(
+            "/api/prd-completion-packages",
+            &cli.project_slug,
+        )),
         Command::PrdCompletionPackage(args) => {
             if cli.project_slug.as_deref() == Some("*") {
                 bail!("prd-completion-package requires a concrete --project slug, not *");
@@ -4649,6 +4797,10 @@ fn dispatch(cli: Cli) -> Result<RuntimeHttpResponse> {
             ))?;
             write_production_evidence_handoff_response(response, args.path.as_deref())
         }
+        Command::ProductionEvidenceHandoffPackages => server.handle_path(&path_with_project(
+            "/api/production-evidence/handoff-packages",
+            &cli.project_slug,
+        )),
         Command::ProductionEvidenceHandoffPackage(args) => {
             if cli.project_slug.as_deref() == Some("*") {
                 bail!(
@@ -4835,6 +4987,14 @@ fn dispatch(cli: Cli) -> Result<RuntimeHttpResponse> {
             let body = handoff_package_body(&cli.project_slug, args);
             server.handle_request_with_body("POST", "/api/handoff-packages", &body.to_string())
         }
+        Command::IntegrationConformancePackages => server.handle_path(&path_with_project(
+            "/api/integration-conformance-packages",
+            &cli.project_slug,
+        )),
+        Command::AgentConformancePackages => server.handle_path(&path_with_project(
+            "/api/agent-conformance-packages",
+            &cli.project_slug,
+        )),
         Command::AgentConformancePackage(args) => {
             if cli.project_slug.as_deref() == Some("*") {
                 bail!("agent-conformance-package requires a concrete --project slug, not *");
@@ -5221,15 +5381,30 @@ fn mcp_tool_http_request(
             path: software_contracts_path(mcp_optional_string_arg(&args, "adapter_id").as_deref()),
             body: None,
         }),
+        "pool_software_conformance_packages" => Ok(McpHttpToolRequest {
+            method: "GET",
+            path: path_with_project("/api/software-conformance-packages", &project_slug),
+            body: None,
+        }),
         "pool_software_conformance_package" => Ok(McpHttpToolRequest {
             method: "POST",
             path: "/api/software-conformance-packages".to_string(),
             body: Some(mcp_body_with_project(args, default_project_slug)?),
         }),
+        "pool_provider_conformance_packages" => Ok(McpHttpToolRequest {
+            method: "GET",
+            path: path_with_project("/api/provider-conformance-packages", &project_slug),
+            body: None,
+        }),
         "pool_provider_conformance_package" => Ok(McpHttpToolRequest {
             method: "POST",
             path: "/api/provider-conformance-packages".to_string(),
             body: Some(mcp_body_with_project(args, default_project_slug)?),
+        }),
+        "pool_integration_conformance_packages" => Ok(McpHttpToolRequest {
+            method: "GET",
+            path: path_with_project("/api/integration-conformance-packages", &project_slug),
+            body: None,
         }),
         "pool_integration_conformance_package" => Ok(McpHttpToolRequest {
             method: "POST",
@@ -5331,6 +5506,53 @@ fn mcp_tool_http_request(
             path: path_with_project("/api/prd-readiness", &project_slug),
             body: None,
         }),
+        "pool_core_architecture_readiness" => Ok(McpHttpToolRequest {
+            method: "GET",
+            path: path_with_project("/api/core-architecture-readiness", &project_slug),
+            body: None,
+        }),
+        "pool_core_architecture_gate" => {
+            let path = if mcp_optional_bool_arg(&args, "require_ready")
+                .or_else(|| mcp_optional_bool_arg(&args, "require_complete"))
+                .unwrap_or(false)
+            {
+                path_with_query(
+                    "/api/core-architecture-gate",
+                    &[("require_ready", "true")],
+                    &project_slug,
+                )
+            } else {
+                path_with_project("/api/core-architecture-gate", &project_slug)
+            };
+            Ok(McpHttpToolRequest {
+                method: "GET",
+                path,
+                body: None,
+            })
+        }
+        "pool_core_architecture_packages" => Ok(McpHttpToolRequest {
+            method: "GET",
+            path: path_with_project("/api/core-architecture-packages", &project_slug),
+            body: None,
+        }),
+        "pool_core_architecture_package" => {
+            let selected_project = project_slug.clone().unwrap_or_else(|| "demo".to_string());
+            Ok(McpHttpToolRequest {
+                method: "POST",
+                path: "/api/core-architecture-package".to_string(),
+                body: Some(json!({
+                    "project_slug": selected_project.clone(),
+                    "node_id": mcp_optional_string_arg(&args, "node_id"),
+                    "title": mcp_optional_string_arg(&args, "title")
+                        .unwrap_or_else(|| "Core architecture proof package".to_string()),
+                    "output_dir": mcp_optional_string_arg(&args, "output_dir")
+                        .unwrap_or_else(|| format!("worlds/{selected_project}/output")),
+                    "source": mcp_optional_string_arg(&args, "source")
+                        .unwrap_or_else(|| "mcp-core-architecture-package".to_string()),
+                    "include_snapshot": mcp_optional_bool_arg(&args, "include_snapshot").unwrap_or(true),
+                })),
+            })
+        }
         "pool_prd_completion_gate" => {
             let path = if mcp_optional_bool_arg(&args, "require_complete").unwrap_or(false) {
                 path_with_query(
@@ -5347,6 +5569,11 @@ fn mcp_tool_http_request(
                 body: None,
             })
         }
+        "pool_prd_completion_packages" => Ok(McpHttpToolRequest {
+            method: "GET",
+            path: path_with_project("/api/prd-completion-packages", &project_slug),
+            body: None,
+        }),
         "pool_production_evidence_requirements" => Ok(McpHttpToolRequest {
             method: "GET",
             path: path_with_project("/api/production-evidence/requirements", &project_slug),
@@ -5587,6 +5814,11 @@ fn mcp_tool_http_request(
             path: "/api/prd-completion-package".to_string(),
             body: Some(mcp_body_with_project(args, default_project_slug)?),
         }),
+        "pool_production_evidence_handoff_packages" => Ok(McpHttpToolRequest {
+            method: "GET",
+            path: path_with_project("/api/production-evidence/handoff-packages", &project_slug),
+            body: None,
+        }),
         "pool_production_evidence_handoff_package" => Ok(McpHttpToolRequest {
             method: "POST",
             path: "/api/production-evidence/handoff-packages".to_string(),
@@ -5601,6 +5833,11 @@ fn mcp_tool_http_request(
             method: "POST",
             path: "/api/agent-conformance-packages".to_string(),
             body: Some(mcp_body_with_project(args, default_project_slug)?),
+        }),
+        "pool_agent_conformance_packages" => Ok(McpHttpToolRequest {
+            method: "GET",
+            path: path_with_project("/api/agent-conformance-packages", &project_slug),
+            body: None,
         }),
         "pool_agent_transcript" => {
             let session_id = mcp_required_string_arg(&args, "session_id")?;
@@ -5815,6 +6052,11 @@ fn mcp_tool_definitions() -> Vec<Value> {
             }),
         ),
         mcp_tool(
+            "pool_software_conformance_packages",
+            "Read generated software conformance package catalog from the asset ledger and local manifests.",
+            json!({"type":"object","properties":mcp_project_property()}),
+        ),
+        mcp_tool(
             "pool_software_conformance_package",
             "Write a local software adapter conformance package with contract, runbook, preflight, and runner script.",
             json!({
@@ -5880,6 +6122,43 @@ fn mcp_tool_definitions() -> Vec<Value> {
             json!({"type":"object","properties":mcp_project_property()}),
         ),
         mcp_tool(
+            "pool_core_architecture_readiness",
+            "Read local core architecture completion gate, separated from strict production evidence closeout.",
+            json!({"type":"object","properties":mcp_project_property()}),
+        ),
+        mcp_tool(
+            "pool_core_architecture_gate",
+            "Read the local core architecture hard gate. Set require_ready:true to make incomplete snapshots return HTTP 428.",
+            json!({
+                "type":"object",
+                "properties":{
+                    "project_slug":{"type":"string"},
+                    "require_ready":{"type":"boolean"},
+                    "require_complete":{"type":"boolean"}
+                }
+            }),
+        ),
+        mcp_tool(
+            "pool_core_architecture_packages",
+            "Read generated core architecture proof package files, manifest, commands, and MCP resources.",
+            json!({"type":"object","properties":mcp_project_property()}),
+        ),
+        mcp_tool(
+            "pool_core_architecture_package",
+            "Write a local core architecture proof package with readiness, graph, execution plan, handoff, output catalog, strict PRD gate, manifest, and optional snapshot.",
+            json!({
+                "type":"object",
+                "properties":{
+                    "project_slug":{"type":"string"},
+                    "node_id":{"type":"string"},
+                    "title":{"type":"string"},
+                    "output_dir":{"type":"string"},
+                    "source":{"type":"string"},
+                    "include_snapshot":{"type":"boolean"}
+                }
+            }),
+        ),
+        mcp_tool(
             "pool_prd_readiness",
             "Read requirement-by-requirement Pool PRD readiness, evidence, remaining gaps, and next actions.",
             json!({"type":"object","properties":mcp_project_property()}),
@@ -5894,6 +6173,11 @@ fn mcp_tool_definitions() -> Vec<Value> {
                     "require_complete":{"type":"boolean"}
                 }
             }),
+        ),
+        mcp_tool(
+            "pool_prd_completion_packages",
+            "Read generated PRD completion proof package files, manifest, commands, and readiness status.",
+            json!({"type":"object","properties":mcp_project_property()}),
         ),
         mcp_tool(
             "pool_production_evidence_requirements",
@@ -5978,6 +6262,11 @@ fn mcp_tool_definitions() -> Vec<Value> {
             json!({"type":"object","properties":{}}),
         ),
         mcp_tool(
+            "pool_provider_conformance_packages",
+            "Read generated Provider conformance package catalog from the asset ledger and local manifests.",
+            json!({"type":"object","properties":mcp_project_property()}),
+        ),
+        mcp_tool(
             "pool_provider_conformance_package",
             "Write a local Provider conformance package with provider contract, gateway worker contract, runbook, preflight, and runner script.",
             json!({
@@ -6049,6 +6338,11 @@ fn mcp_tool_definitions() -> Vec<Value> {
             "pool_production_evidence_handoff",
             "Read a missing-only production evidence handoff with requirements, bundle scaffold, commands, and operator checklist.",
             json!({"type":"object","properties":{"project_slug":{"type":"string"},"output_root":{"type":"string"},"source":{"type":"string"}}}),
+        ),
+        mcp_tool(
+            "pool_production_evidence_handoff_packages",
+            "Read generated production evidence handoff package files, runner scripts, item files, and operator commands.",
+            json!({"type":"object","properties":mcp_project_property()}),
         ),
         mcp_tool(
             "pool_production_evidence_item_from_ledger",
@@ -6165,6 +6459,16 @@ fn mcp_tool_definitions() -> Vec<Value> {
             "pool_agent_conformance_package",
             "Write a local Agent/Hermes conformance package with session contract, runbook, preflight, and runner script.",
             json!({"type":"object","properties":{"project_slug":{"type":"string"},"kind":{"type":"string","enum":["all","hermes","agent-cli"]},"node_id":{"type":"string"},"title":{"type":"string"},"output_dir":{"type":"string"}}}),
+        ),
+        mcp_tool(
+            "pool_agent_conformance_packages",
+            "Read generated Agent/Hermes conformance package catalog from the asset ledger and local manifests.",
+            json!({"type":"object","properties":mcp_project_property()}),
+        ),
+        mcp_tool(
+            "pool_integration_conformance_packages",
+            "Read generated integration conformance package catalog from the asset ledger and local manifests.",
+            json!({"type":"object","properties":mcp_project_property()}),
         ),
         mcp_tool(
             "pool_integration_conformance_package",
@@ -9056,6 +9360,19 @@ fn prd_completion_package_body(
     Value::Object(body)
 }
 
+fn core_architecture_package_body(
+    project_slug: &Option<String>,
+    args: CoreArchitecturePackageArgs,
+) -> Value {
+    let mut body = project_body(project_slug);
+    insert_optional(&mut body, "node_id", args.node_id);
+    insert_optional(&mut body, "title", args.title);
+    insert_optional(&mut body, "output_dir", args.output_dir);
+    insert_optional(&mut body, "source", args.source);
+    body.insert("include_snapshot".to_string(), json!(args.include_snapshot));
+    Value::Object(body)
+}
+
 fn agent_session_body(project_slug: &Option<String>, args: AgentSessionArgs) -> Value {
     let mut body = project_body(project_slug);
     body.insert("kind".to_string(), Value::String(args.kind));
@@ -9302,6 +9619,21 @@ fn prd_completion_gate_path(project_slug: &Option<String>, args: &PrdCompletionG
         )
     } else {
         path_with_project("/api/prd-completion-gate", project_slug)
+    }
+}
+
+fn core_architecture_gate_path(
+    project_slug: &Option<String>,
+    args: &CoreArchitectureGateArgs,
+) -> String {
+    if args.require_ready {
+        path_with_query(
+            "/api/core-architecture-gate",
+            &[("require_ready", "true")],
+            project_slug,
+        )
+    } else {
+        path_with_project("/api/core-architecture-gate", project_slug)
     }
 }
 
@@ -9575,13 +9907,18 @@ COMMANDS:
   adapters                       Read /api/adapters
   integration-readiness          Read /api/integration-readiness
   provider-contracts [id]        Read /api/provider-contracts
+  provider-conformance-packages  GET /api/provider-conformance-packages
   provider-conformance-package <provider-id>
                                   POST /api/provider-conformance-packages
+  integration-conformance-packages
+                                  GET /api/integration-conformance-packages
   integration-conformance-package [options]
                                   POST /api/integration-conformance-packages
+  agent-conformance-packages      GET /api/agent-conformance-packages
   agent-conformance-package [all|hermes|agent-cli]
                                   POST /api/agent-conformance-packages
   software-contracts [id]        Read /api/software-contracts
+  software-conformance-packages  GET /api/software-conformance-packages
   software-conformance-package <adapter-id>
                                   POST /api/software-conformance-packages
   tasks                          Read pool://tasks
@@ -9592,9 +9929,16 @@ COMMANDS:
   runtime-run-next [options]     Preview or POST /api/runtime-execution-plan/run-next
   runtime-handoff                Read /api/runtime-handoff
   runtime-handoff-packages       GET /api/handoff-packages
+  core-architecture-readiness    Read /api/core-architecture-readiness
+  core-architecture-gate [--require-ready]
+                                  Read architecture_gate from /api/core-architecture-readiness
+  core-architecture-packages     GET /api/core-architecture-packages
+  core-architecture-package      POST /api/core-architecture-package
   prd-readiness                  Read /api/prd-readiness
   prd-completion-gate [--require-complete]
                                   Read completion_gate from /api/prd-readiness
+  prd-completion-packages        GET /api/prd-completion-packages
+  prd-completion-package         POST /api/prd-completion-package
   runtime-graph                  Read /api/runtime-graph
   workflow-context [workflow-id]  Read /api/workflow-context index or workflow detail
   node-context [node-id]          Read /api/node-context index or node detail
@@ -9627,6 +9971,8 @@ COMMANDS:
                                   GET /api/production-evidence/run-plan
   production-evidence-handoff [handoff.json]
                                   GET /api/production-evidence/handoff
+  production-evidence-handoff-packages
+                                  GET /api/production-evidence/handoff-packages
   production-evidence-handoff-package [options]
                                   POST /api/production-evidence/handoff-packages
   production-evidence-template [bundle.json] [--missing-only]
@@ -10126,6 +10472,22 @@ mod tests {
     }
 
     #[test]
+    fn parses_runtime_handoff_packages_command_with_runtime_options() {
+        let cli = parse_cli(vec![
+            "--db".to_string(),
+            "runtime.sqlite".to_string(),
+            "--project".to_string(),
+            "demo".to_string(),
+            "handoff-packages".to_string(),
+        ])
+        .unwrap();
+
+        assert_eq!(cli.db_path, PathBuf::from("runtime.sqlite"));
+        assert_eq!(cli.project_slug.as_deref(), Some("demo"));
+        assert!(matches!(cli.command, Command::RuntimeHandoffPackages));
+    }
+
+    #[test]
     fn parses_closeout_production_evidence_command_with_output_and_import_flag() {
         let cli = parse_cli(vec![
             "--db".to_string(),
@@ -10444,6 +10806,13 @@ mod tests {
     }
 
     #[test]
+    fn parses_software_conformance_packages_command() {
+        let command = parse_command(vec!["software-conformance-packages".to_string()]).unwrap();
+
+        assert!(matches!(command, Command::SoftwareConformancePackages));
+    }
+
+    #[test]
     fn parses_provider_conformance_package_command() {
         let command = parse_command(vec![
             "provider-conformance-package".to_string(),
@@ -10466,6 +10835,13 @@ mod tests {
             }
             other => panic!("unexpected command: {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_provider_conformance_packages_command() {
+        let command = parse_command(vec!["provider-conformance-packages".to_string()]).unwrap();
+
+        assert!(matches!(command, Command::ProviderConformancePackages));
     }
 
     #[test]
@@ -10501,6 +10877,13 @@ mod tests {
     }
 
     #[test]
+    fn parses_integration_conformance_packages_command() {
+        let command = parse_command(vec!["integration-conformance-packages".to_string()]).unwrap();
+
+        assert!(matches!(command, Command::IntegrationConformancePackages));
+    }
+
+    #[test]
     fn parses_agent_conformance_package_command() {
         let command = parse_command(vec![
             "agent-conformance-package".to_string(),
@@ -10523,6 +10906,13 @@ mod tests {
             }
             other => panic!("unexpected command: {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_agent_conformance_packages_command() {
+        let command = parse_command(vec!["agent-conformance-packages".to_string()]).unwrap();
+
+        assert!(matches!(command, Command::AgentConformancePackages));
     }
 
     #[test]
@@ -11352,6 +11742,17 @@ mod tests {
             }
             other => panic!("unexpected command: {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_production_evidence_handoff_packages_command() {
+        let command =
+            parse_command(vec!["production-evidence-handoff-packages".to_string()]).unwrap();
+
+        assert!(matches!(
+            command,
+            Command::ProductionEvidenceHandoffPackages
+        ));
     }
 
     #[test]
@@ -12460,6 +12861,49 @@ mod tests {
     }
 
     #[test]
+    fn core_architecture_gate_dispatch_reads_gate_and_can_require_ready() {
+        let db_path = temp_cli_db_path("core-architecture-gate");
+        let repository = RuntimeRepository::open(&db_path).unwrap();
+        repository.migrate().unwrap();
+        repository
+            .persist_plan(&build_default_content_burst_plan(
+                "demo",
+                "CLI core architecture gate test",
+            ))
+            .unwrap();
+
+        let response = dispatch(Cli {
+            db_path: db_path.clone(),
+            project_slug: Some("demo".to_string()),
+            command: Command::CoreArchitectureGate(CoreArchitectureGateArgs {
+                require_ready: false,
+            }),
+        })
+        .unwrap();
+        let value: Value = serde_json::from_str(&response.body).unwrap();
+
+        assert_eq!(response.status_code, 200);
+        assert_eq!(value["kind"], "pool_core_architecture_gate");
+        assert_eq!(
+            value["architecture_gate"]["ready_for_core_architecture"],
+            false
+        );
+
+        let required = dispatch(Cli {
+            db_path,
+            project_slug: Some("demo".to_string()),
+            command: Command::CoreArchitectureGate(CoreArchitectureGateArgs {
+                require_ready: true,
+            }),
+        })
+        .unwrap();
+        let required_value: Value = serde_json::from_str(&required.body).unwrap();
+
+        assert_eq!(required.status_code, 428);
+        assert_eq!(required_value["error"], "core_architecture_gate_incomplete");
+    }
+
+    #[test]
     fn prd_completion_package_dispatch_writes_completion_files() {
         let db_path = temp_cli_db_path("prd-completion-package");
         let output_dir = temp_cli_dir("prd-completion-package-output");
@@ -12473,7 +12917,7 @@ mod tests {
             .unwrap();
 
         let response = dispatch(Cli {
-            db_path,
+            db_path: db_path.clone(),
             project_slug: Some("demo".to_string()),
             command: Command::PrdCompletionPackage(PrdCompletionPackageArgs {
                 node_id: Some("agent".to_string()),
@@ -12499,6 +12943,143 @@ mod tests {
         assert!(PathBuf::from(value["report"]["manifest_path"].as_str().unwrap()).exists());
         assert_eq!(value["task"]["status"], "Succeeded");
         assert!(value["assets"].as_array().unwrap().len() >= 5);
+
+        let catalog_response = dispatch(Cli {
+            db_path,
+            project_slug: Some("demo".to_string()),
+            command: Command::PrdCompletionPackages,
+        })
+        .unwrap();
+        let catalog: Value = serde_json::from_str(&catalog_response.body).unwrap();
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_prd_completion_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(
+            catalog["packages"][0]["manifest_path"],
+            value["report"]["manifest_path"]
+        );
+        assert_eq!(
+            catalog["packages"][0]["ready_for_completion"],
+            value["report"]["ready_for_completion"]
+        );
+
+        let _ = fs::remove_dir_all(output_dir);
+    }
+
+    #[test]
+    fn core_architecture_package_dispatch_writes_proof_files() {
+        let db_path = temp_cli_db_path("core-architecture-package");
+        let output_dir = temp_cli_dir("core-architecture-package-output");
+        let repository = RuntimeRepository::open(&db_path).unwrap();
+        repository.migrate().unwrap();
+        repository
+            .persist_plan(&build_default_content_burst_plan(
+                "demo",
+                "CLI core architecture package test",
+            ))
+            .unwrap();
+
+        let response = dispatch(Cli {
+            db_path: db_path.clone(),
+            project_slug: Some("demo".to_string()),
+            command: Command::CoreArchitecturePackage(CoreArchitecturePackageArgs {
+                node_id: Some("agent".to_string()),
+                title: Some("Core architecture package smoke".to_string()),
+                output_dir: Some(output_dir.to_string_lossy().into_owned()),
+                source: Some("cli-test".to_string()),
+                include_snapshot: true,
+            }),
+        })
+        .unwrap();
+        let value: Value = serde_json::from_str(&response.body).unwrap();
+
+        assert_eq!(response.status_code, 201);
+        assert_eq!(value["kind"], "pool_core_architecture_package");
+        assert_eq!(value["report"]["ready_for_core_architecture"], false);
+        assert!(PathBuf::from(value["report"]["readiness_path"].as_str().unwrap()).exists());
+        assert!(PathBuf::from(
+            value["report"]["core_architecture_gate_path"]
+                .as_str()
+                .unwrap()
+        )
+        .exists());
+        assert!(PathBuf::from(value["report"]["runtime_graph_path"].as_str().unwrap()).exists());
+        assert!(PathBuf::from(
+            value["report"]["strict_prd_completion_gate_path"]
+                .as_str()
+                .unwrap()
+        )
+        .exists());
+        assert!(PathBuf::from(value["report"]["manifest_path"].as_str().unwrap()).exists());
+        assert_eq!(value["task"]["status"], "Succeeded");
+        assert!(value["assets"].as_array().unwrap().len() >= 7);
+
+        let catalog_response = dispatch(Cli {
+            db_path,
+            project_slug: Some("demo".to_string()),
+            command: Command::CoreArchitecturePackages,
+        })
+        .unwrap();
+        let catalog: Value = serde_json::from_str(&catalog_response.body).unwrap();
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_core_architecture_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(catalog["summary"]["ready_packages"], 1);
+        assert_eq!(
+            catalog["packages"][0]["manifest_path"],
+            value["report"]["manifest_path"]
+        );
+        assert_eq!(
+            catalog["packages"][0]["core_architecture_gate_path"],
+            value["report"]["core_architecture_gate_path"]
+        );
+
+        let _ = fs::remove_dir_all(output_dir);
+    }
+
+    #[test]
+    fn runtime_handoff_packages_dispatch_reads_generated_catalog() {
+        let db_path = temp_cli_db_path("runtime-handoff-packages");
+        let output_dir = temp_cli_dir("runtime-handoff-packages-output");
+        let repository = RuntimeRepository::open(&db_path).unwrap();
+        repository.migrate().unwrap();
+        repository
+            .persist_plan(&build_default_content_burst_plan(
+                "demo",
+                "CLI handoff package catalog test",
+            ))
+            .unwrap();
+        drop(repository);
+
+        let generated = dispatch(Cli {
+            db_path: db_path.clone(),
+            project_slug: Some("demo".to_string()),
+            command: Command::HandoffPackage(HandoffPackageArgs {
+                node_id: Some("agent".to_string()),
+                title: Some("CLI runtime handoff package".to_string()),
+                output_dir: Some(output_dir.to_string_lossy().into_owned()),
+                include_snapshot: true,
+            }),
+        })
+        .unwrap();
+        assert_eq!(generated.status_code, 201);
+
+        let catalog_response = dispatch(Cli {
+            db_path,
+            project_slug: Some("demo".to_string()),
+            command: Command::RuntimeHandoffPackages,
+        })
+        .unwrap();
+        let catalog: Value = serde_json::from_str(&catalog_response.body).unwrap();
+
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_runtime_handoff_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(catalog["summary"]["ready_packages"], 1);
+        assert!(catalog["packages"][0]["agent_entrypoint"]["mcp_stdio"]
+            .as_str()
+            .unwrap()
+            .contains("serve-mcp"));
 
         let _ = fs::remove_dir_all(output_dir);
     }
@@ -13188,6 +13769,13 @@ mod tests {
     }
 
     #[test]
+    fn parses_prd_completion_packages_command() {
+        let command = parse_command(vec!["prd-completion-packages".to_string()]).unwrap();
+
+        assert!(matches!(command, Command::PrdCompletionPackages));
+    }
+
+    #[test]
     fn builds_workflow_run_body_with_modes() {
         let body = workflow_run_body(
             &Some("demo".to_string()),
@@ -13288,6 +13876,58 @@ mod tests {
     }
 
     #[test]
+    fn parses_core_architecture_readiness_query_command() {
+        let command = parse_command(vec!["core-architecture-readiness".to_string()]).unwrap();
+        assert!(matches!(command, Command::CoreArchitectureReadiness));
+    }
+
+    #[test]
+    fn parses_core_architecture_gate_require_ready() {
+        let command = parse_command(vec![
+            "core-architecture-gate".to_string(),
+            "--require-ready".to_string(),
+        ])
+        .unwrap();
+        match command {
+            Command::CoreArchitectureGate(args) => assert!(args.require_ready),
+            _ => panic!("expected core architecture gate command"),
+        }
+    }
+
+    #[test]
+    fn parses_core_architecture_packages_query_command() {
+        let command = parse_command(vec!["core-architecture-packages".to_string()]).unwrap();
+        assert!(matches!(command, Command::CoreArchitecturePackages));
+    }
+
+    #[test]
+    fn parses_core_architecture_package_command() {
+        let command = parse_command(vec![
+            "core-architecture-package".to_string(),
+            "--node-id".to_string(),
+            "agent".to_string(),
+            "--title".to_string(),
+            "Core proof".to_string(),
+            "--output-dir".to_string(),
+            "worlds/demo/output".to_string(),
+            "--source=cli-test".to_string(),
+            "--no-snapshot".to_string(),
+        ])
+        .unwrap();
+
+        match command {
+            Command::CoreArchitecturePackage(args) => {
+                assert_eq!(args.node_id.as_deref(), Some("agent"));
+                assert_eq!(args.title.as_deref(), Some("Core proof"));
+                assert_eq!(args.output_dir.as_deref(), Some("worlds/demo/output"));
+                assert_eq!(args.source.as_deref(), Some("cli-test"));
+                assert!(!args.include_snapshot);
+            }
+            other => panic!("unexpected command: {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_output_result_command() {
         let command = parse_command(vec![
             "output-result".to_string(),
@@ -13338,16 +13978,27 @@ mod tests {
         assert!(names.contains(&"pool_runtime_execution_plan".to_string()));
         assert!(names.contains(&"pool_runtime_execution_plan_run_next".to_string()));
         assert!(names.contains(&"pool_runtime_handoff".to_string()));
+        assert!(names.contains(&"pool_runtime_handoff_packages".to_string()));
+        assert!(names.contains(&"pool_core_architecture_readiness".to_string()));
+        assert!(names.contains(&"pool_core_architecture_gate".to_string()));
+        assert!(names.contains(&"pool_core_architecture_packages".to_string()));
+        assert!(names.contains(&"pool_core_architecture_package".to_string()));
         assert!(names.contains(&"pool_prd_readiness".to_string()));
         assert!(names.contains(&"pool_prd_completion_gate".to_string()));
+        assert!(names.contains(&"pool_prd_completion_packages".to_string()));
+        assert!(names.contains(&"pool_prd_completion_package".to_string()));
         assert!(names.contains(&"pool_output_packages".to_string()));
         assert!(names.contains(&"pool_output_result".to_string()));
         assert!(names.contains(&"pool_adapters".to_string()));
         assert!(names.contains(&"pool_integration_readiness".to_string()));
         assert!(names.contains(&"pool_software_contracts".to_string()));
+        assert!(names.contains(&"pool_software_conformance_packages".to_string()));
         assert!(names.contains(&"pool_software_conformance_package".to_string()));
+        assert!(names.contains(&"pool_provider_conformance_packages".to_string()));
         assert!(names.contains(&"pool_provider_conformance_package".to_string()));
+        assert!(names.contains(&"pool_agent_conformance_packages".to_string()));
         assert!(names.contains(&"pool_agent_conformance_package".to_string()));
+        assert!(names.contains(&"pool_integration_conformance_packages".to_string()));
         assert!(names.contains(&"pool_integration_conformance_package".to_string()));
         assert!(names.contains(&"pool_handoff_package".to_string()));
         assert!(names.contains(&"pool_workflow_context".to_string()));
@@ -13361,6 +14012,7 @@ mod tests {
         assert!(names.contains(&"pool_production_evidence_item_template".to_string()));
         assert!(names.contains(&"pool_production_evidence_handoff".to_string()));
         assert!(names.contains(&"pool_prd_completion_package".to_string()));
+        assert!(names.contains(&"pool_production_evidence_handoff_packages".to_string()));
         assert!(names.contains(&"pool_production_evidence_handoff_package".to_string()));
         assert!(names.contains(&"pool_production_evidence_template".to_string()));
         assert!(names.contains(&"pool_validate_production_evidence".to_string()));
@@ -13677,6 +14329,37 @@ mod tests {
         assert_eq!(
             request.path,
             "/api/prd-completion-gate?require_complete=true&project=demo"
+        );
+        assert!(request.body.is_none());
+    }
+
+    #[test]
+    fn maps_mcp_prd_completion_packages_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_prd_completion_packages",
+            json!({ "project_slug": "demo" }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(request.path, "/api/prd-completion-packages?project=demo");
+        assert!(request.body.is_none());
+    }
+
+    #[test]
+    fn maps_mcp_production_evidence_handoff_packages_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_production_evidence_handoff_packages",
+            json!({ "project_slug": "demo" }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(
+            request.path,
+            "/api/production-evidence/handoff-packages?project=demo"
         );
         assert!(request.body.is_none());
     }
@@ -14065,6 +14748,91 @@ mod tests {
     }
 
     #[test]
+    fn maps_mcp_runtime_handoff_packages_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_runtime_handoff_packages",
+            json!({ "project_slug": "demo" }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(request.path, "/api/handoff-packages?project=demo");
+        assert!(request.body.is_none());
+    }
+
+    #[test]
+    fn maps_mcp_core_architecture_readiness_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_core_architecture_readiness",
+            json!({ "project_slug": "demo" }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(
+            request.path,
+            "/api/core-architecture-readiness?project=demo"
+        );
+        assert!(request.body.is_none());
+    }
+
+    #[test]
+    fn maps_mcp_core_architecture_gate_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_core_architecture_gate",
+            json!({ "project_slug": "demo", "require_ready": true }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(
+            request.path,
+            "/api/core-architecture-gate?require_ready=true&project=demo"
+        );
+        assert!(request.body.is_none());
+    }
+
+    #[test]
+    fn maps_mcp_core_architecture_packages_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_core_architecture_packages",
+            json!({ "project_slug": "demo" }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(request.path, "/api/core-architecture-packages?project=demo");
+        assert!(request.body.is_none());
+    }
+
+    #[test]
+    fn maps_mcp_core_architecture_package_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_core_architecture_package",
+            json!({
+                "project_slug": "demo",
+                "node_id": "agent",
+                "output_dir": "worlds/demo/output",
+                "include_snapshot": false
+            }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "POST");
+        assert_eq!(request.path, "/api/core-architecture-package");
+        let body = request.body.unwrap();
+        assert_eq!(body["project_slug"], "demo");
+        assert_eq!(body["node_id"], "agent");
+        assert_eq!(body["output_dir"], "worlds/demo/output");
+        assert_eq!(body["include_snapshot"], false);
+    }
+
+    #[test]
     fn maps_mcp_prd_readiness_tool_to_runtime_path() {
         let request = mcp_tool_http_request(
             "pool_prd_readiness",
@@ -14136,6 +14904,23 @@ mod tests {
     }
 
     #[test]
+    fn maps_mcp_software_conformance_packages_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_software_conformance_packages",
+            json!({ "project_slug": "demo" }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(
+            request.path,
+            "/api/software-conformance-packages?project=demo"
+        );
+        assert!(request.body.is_none());
+    }
+
+    #[test]
     fn maps_mcp_provider_conformance_package_tool_to_runtime_path() {
         let request = mcp_tool_http_request(
             "pool_provider_conformance_package",
@@ -14156,6 +14941,23 @@ mod tests {
     }
 
     #[test]
+    fn maps_mcp_provider_conformance_packages_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_provider_conformance_packages",
+            json!({ "project_slug": "demo" }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(
+            request.path,
+            "/api/provider-conformance-packages?project=demo"
+        );
+        assert!(request.body.is_none());
+    }
+
+    #[test]
     fn maps_mcp_agent_conformance_package_tool_to_runtime_path() {
         let request = mcp_tool_http_request(
             "pool_agent_conformance_package",
@@ -14173,6 +14975,20 @@ mod tests {
         let body = request.body.unwrap();
         assert_eq!(body["project_slug"], "demo");
         assert_eq!(body["kind"], "all");
+    }
+
+    #[test]
+    fn maps_mcp_agent_conformance_packages_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_agent_conformance_packages",
+            json!({ "project_slug": "demo" }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(request.path, "/api/agent-conformance-packages?project=demo");
+        assert!(request.body.is_none());
     }
 
     #[test]
@@ -14197,6 +15013,23 @@ mod tests {
         assert_eq!(body["providers"][0], "worldlabs-marble");
         assert_eq!(body["software_adapters"][0], "resolve");
         assert_eq!(body["agent_kind"], "all");
+    }
+
+    #[test]
+    fn maps_mcp_integration_conformance_packages_tool_to_runtime_path() {
+        let request = mcp_tool_http_request(
+            "pool_integration_conformance_packages",
+            json!({ "project_slug": "demo" }),
+            &None,
+        )
+        .unwrap();
+
+        assert_eq!(request.method, "GET");
+        assert_eq!(
+            request.path,
+            "/api/integration-conformance-packages?project=demo"
+        );
+        assert!(request.body.is_none());
     }
 
     #[test]

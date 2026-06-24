@@ -1,7 +1,8 @@
 use anyhow::{bail, Context, Result};
 use pool_core::{
-    runtime_prd_readiness_resource, spawn_provider_gateway_mock, ContentBurstAgentMode,
-    ContentBurstProviderMode, ContentBurstRunRequest, ContentBurstRunner, ContentBurstSoftwareMode,
+    runtime_core_architecture_readiness_resource, runtime_prd_readiness_resource,
+    spawn_provider_gateway_mock, ContentBurstAgentMode, ContentBurstProviderMode,
+    ContentBurstRunRequest, ContentBurstRunner, ContentBurstSoftwareMode,
     OutputDeliverableResultRequest, OutputManifestMetric, OutputPackageRunner, RuntimeHttpConfig,
     RuntimeHttpResponse, RuntimeHttpServer, RuntimeRepository,
 };
@@ -143,6 +144,45 @@ fn main() -> Result<()> {
     let repository = RuntimeRepository::open(&db_path)?;
     repository.migrate()?;
     let snapshot = repository.snapshot(Some("demo"))?;
+    drop(repository);
+    let core_architecture = runtime_core_architecture_readiness_resource(&snapshot)?;
+    ensure_true(
+        &core_architecture,
+        "/architecture_gate/ready_for_core_architecture",
+        "core architecture ready_for_core_architecture",
+    )?;
+    let core_gate = parse_response(
+        "core architecture gate",
+        200,
+        server.handle_path("/api/core-architecture-gate?project=demo&require_ready=true")?,
+    )?;
+    ensure_true(
+        &core_gate,
+        "/architecture_gate/ready_for_core_architecture",
+        "core architecture hard gate",
+    )?;
+    let core_package = parse_response(
+        "core architecture package",
+        201,
+        server.handle_request_with_body(
+            "POST",
+            "/api/core-architecture-package",
+            &json!({
+                "project_slug": "demo",
+                "node_id": "agent",
+                "title": "Pool core architecture local proof package",
+                "output_dir": output_root.join("worlds/demo/output"),
+                "source": "run_prd_readiness_smoke",
+                "include_snapshot": true
+            })
+            .to_string(),
+        )?,
+    )?;
+    ensure_true(
+        &core_package,
+        "/report/ready_for_core_architecture",
+        "core architecture package ready_for_core_architecture",
+    )?;
     let readiness = runtime_prd_readiness_resource(&snapshot)?;
     if options.with_production_evidence
         && readiness.pointer("/summary/ready").and_then(Value::as_u64) != Some(10)
@@ -198,6 +238,16 @@ fn main() -> Result<()> {
         );
     }
     println!("prd_summary={}", readiness["summary"]);
+    println!("core_architecture_summary={}", core_architecture["summary"]);
+    println!(
+        "core_architecture_gate=status:{},ready_for_core_architecture:{}",
+        core_architecture["architecture_gate"]["status"],
+        core_architecture["architecture_gate"]["ready_for_core_architecture"]
+    );
+    println!(
+        "core_architecture_package={}",
+        core_package["report"]["manifest_path"]
+    );
     println!(
         "completion_gate=status:{},ready_for_completion:{}",
         readiness["completion_gate"]["status"],

@@ -17,31 +17,33 @@ use crate::db::{ApiKeySnapshot, AssetSnapshot, ProviderRequestSnapshot, TaskSnap
 use crate::desktop_recognition_contract_resource;
 use crate::unreal_mcp_bridge_contract_resource;
 use crate::{
+    conformance_package_catalog_resource, core_architecture_package_catalog_resource,
     output_package_catalog_resource, pool_mcp_prompt_definitions, pool_mcp_prompt_get_result,
-    pool_mcp_prompt_http_path, production_evidence_run_plan_resource,
+    pool_mcp_prompt_http_path, prd_completion_package_catalog_resource,
+    production_evidence_handoff_package_catalog_resource, production_evidence_run_plan_resource,
     production_evidence_tasks_resource, provider_contracts_resource,
     provider_gateway_worker_contract, runtime_adapter_catalog_resource, runtime_budget_resource,
-    runtime_execution_plan_resource, runtime_graph_resource,
-    runtime_handoff_package_catalog_resource, runtime_handoff_resource,
+    runtime_core_architecture_readiness_resource, runtime_execution_plan_resource,
+    runtime_graph_resource, runtime_handoff_package_catalog_resource, runtime_handoff_resource,
     runtime_integration_readiness_resource, runtime_node_context_index_resource,
     runtime_node_context_resource, runtime_prd_completion_gate_resource,
     runtime_prd_readiness_resource, runtime_preflight_resource,
     runtime_production_evidence_requirements_resource, runtime_workflow_context_index_resource,
     runtime_workflow_context_resource, AgentCliCommand, AgentCliExecutionOptions,
     AgentSessionRunner, ComfyUiProvider, ComfyUiProviderOptions, CommandSoftwareAdapter,
-    ContentBurstAgentMode, ContentBurstProviderMode, ContentBurstRunRequest, ContentBurstRunner,
-    ContentBurstSoftwareMode, ControlPriority, DesktopRecognitionAdapter, GenericHttpMediaOptions,
-    GenericHttpMediaProvider, GenericSoftwareApiAdapter, HermesCommand, HermesExecutionOptions,
-    HermesMcpAdapter, KlingAuth, KlingProvider, KlingProviderOptions, McpServer, Mock3dgsProvider,
-    MockUnrealAdapter, OpenAiImageProvider, OpenAiImageProviderOptions,
-    OutputDeliverableResultRequest, OutputManifestMetric, OutputPackageRequest,
-    OutputPackageRunner, ProviderAdapter, ProviderKind, ProviderRegistry, ProviderRequest,
-    ProviderRequestRecord, ProviderTaskRunner, RuntimeEvent, RuntimeEventLevel,
-    RuntimeHandoffPackageRequest, RuntimeHandoffPackageRunner, RuntimeRepository, RuntimeSnapshot,
-    RuntimeTask, SoftwareActionKind, SoftwareActionRecord, SoftwareActionResult,
-    SoftwareActionRunner, SoftwareActionSnapshot, SoftwareAdapter, SoftwareAdapterRegistry,
-    SoftwareControlAction, TaskStatus, ThreeDgsGatewayOptions, ThreeDgsGatewayProvider,
-    UnrealMcpAdapter,
+    ConformancePackageKind, ContentBurstAgentMode, ContentBurstProviderMode,
+    ContentBurstRunRequest, ContentBurstRunner, ContentBurstSoftwareMode, ControlPriority,
+    DesktopRecognitionAdapter, GenericHttpMediaOptions, GenericHttpMediaProvider,
+    GenericSoftwareApiAdapter, HermesCommand, HermesExecutionOptions, HermesMcpAdapter, KlingAuth,
+    KlingProvider, KlingProviderOptions, McpServer, Mock3dgsProvider, MockUnrealAdapter,
+    OpenAiImageProvider, OpenAiImageProviderOptions, OutputDeliverableResultRequest,
+    OutputManifestMetric, OutputPackageRequest, OutputPackageRunner, ProviderAdapter, ProviderKind,
+    ProviderRegistry, ProviderRequest, ProviderRequestRecord, ProviderTaskRunner, RuntimeEvent,
+    RuntimeEventLevel, RuntimeHandoffPackageRequest, RuntimeHandoffPackageRunner,
+    RuntimeRepository, RuntimeSnapshot, RuntimeTask, SoftwareActionKind, SoftwareActionRecord,
+    SoftwareActionResult, SoftwareActionRunner, SoftwareActionSnapshot, SoftwareAdapter,
+    SoftwareAdapterRegistry, SoftwareControlAction, TaskStatus, ThreeDgsGatewayOptions,
+    ThreeDgsGatewayProvider, UnrealMcpAdapter,
 };
 use crate::{software_control_contract, software_control_contracts_resource};
 
@@ -144,8 +146,23 @@ impl RuntimeHttpServer {
             ("GET", "/api/runtime-budget") => self.runtime_budget_response(&request),
             ("GET", "/api/runtime-preflight") => self.runtime_preflight_response(&request),
             ("GET", "/api/runtime-handoff") => self.runtime_handoff_response(&request),
+            ("GET", "/api/core-architecture-readiness") => {
+                self.core_architecture_readiness_response(&request)
+            }
+            ("GET", "/api/core-architecture-gate") => {
+                self.core_architecture_gate_response(&request)
+            }
+            ("GET", "/api/core-architecture-packages") => {
+                self.core_architecture_packages_response(&request)
+            }
+            ("POST", "/api/core-architecture-package") => {
+                self.core_architecture_package_response(body)
+            }
             ("GET", "/api/prd-readiness") => self.prd_readiness_response(&request),
             ("GET", "/api/prd-completion-gate") => self.prd_completion_gate_response(&request),
+            ("GET", "/api/prd-completion-packages") => {
+                self.prd_completion_packages_response(&request)
+            }
             ("POST", "/api/prd-completion-package") => self.prd_completion_package_response(body),
             ("GET", "/api/production-evidence/requirements") => {
                 self.production_evidence_requirements_response(&request)
@@ -162,6 +179,9 @@ impl RuntimeHttpServer {
             ("GET", "/api/production-evidence/handoff") => {
                 self.production_evidence_handoff_response(&request)
             }
+            ("GET", "/api/production-evidence/handoff-packages") => {
+                self.production_evidence_handoff_packages_response(&request)
+            }
             ("POST", "/api/production-evidence/handoff-packages") => {
                 self.production_evidence_handoff_package_response(body)
             }
@@ -172,13 +192,22 @@ impl RuntimeHttpServer {
             ("GET", "/api/integration-readiness") => self.integration_readiness_response(&request),
             ("GET", "/api/provider-contracts") => self.provider_contracts_response(&request),
             ("GET", "/api/provider-gateway-worker") => self.provider_gateway_worker_response(),
+            ("GET", "/api/provider-conformance-packages") => {
+                self.conformance_packages_response(&request, ConformancePackageKind::Provider)
+            }
             ("POST", "/api/provider-conformance-packages") => {
                 self.provider_conformance_package_response(body)
+            }
+            ("GET", "/api/integration-conformance-packages") => {
+                self.conformance_packages_response(&request, ConformancePackageKind::Integration)
             }
             ("POST", "/api/integration-conformance-packages") => {
                 self.integration_conformance_package_response(body)
             }
             ("GET", "/api/software-contracts") => self.software_contracts_response(&request),
+            ("GET", "/api/software-conformance-packages") => {
+                self.conformance_packages_response(&request, ConformancePackageKind::Software)
+            }
             ("POST", "/api/software-conformance-packages") => {
                 self.software_conformance_package_response(body)
             }
@@ -224,6 +253,9 @@ impl RuntimeHttpServer {
             ("POST", "/api/output-packages/results") => self.output_package_result_response(body),
             ("POST", "/api/handoff-packages") => self.handoff_package_response(body),
             ("POST", "/api/agent-sessions") => self.agent_session_response(body),
+            ("GET", "/api/agent-conformance-packages") => {
+                self.conformance_packages_response(&request, ConformancePackageKind::Agent)
+            }
             ("POST", "/api/agent-conformance-packages") => {
                 self.agent_conformance_package_response(body)
             }
@@ -268,8 +300,13 @@ impl RuntimeHttpServer {
                 | "/api/runtime-budget"
                 | "/api/runtime-preflight"
                 | "/api/runtime-handoff"
+                | "/api/core-architecture-readiness"
+                | "/api/core-architecture-gate"
+                | "/api/core-architecture-packages"
+                | "/api/core-architecture-package"
                 | "/api/prd-readiness"
                 | "/api/prd-completion-gate"
+                | "/api/prd-completion-packages"
                 | "/api/prd-completion-package"
                 | "/api/production-evidence/requirements"
                 | "/api/production-evidence/tasks"
@@ -503,8 +540,13 @@ impl RuntimeHttpServer {
                     "runtime_execution_plan": true,
                     "runtime_execution_plan_run_next": true,
                     "runtime_handoff": true,
+                    "core_architecture_readiness": true,
+                    "core_architecture_gate": true,
+                    "core_architecture_package_catalog": true,
+                    "core_architecture_package": true,
                     "prd_readiness": true,
                     "prd_completion_gate": true,
+                    "prd_completion_package_catalog": true,
                     "prd_completion_package": true,
                     "output_package_catalog": true,
                     "output_package_results": true,
@@ -1544,6 +1586,18 @@ impl RuntimeHttpServer {
                 "task": task,
                 "snapshot": snapshot,
             }),
+        )
+    }
+
+    fn conformance_packages_response(
+        &self,
+        request: &RuntimeHttpRequest,
+        package_kind: ConformancePackageKind,
+    ) -> Result<RuntimeHttpResponse> {
+        let snapshot = self.load_snapshot_for_request(request)?;
+        RuntimeHttpResponse::json(
+            200,
+            conformance_package_catalog_resource(&snapshot, package_kind),
         )
     }
 
@@ -4972,6 +5026,182 @@ impl RuntimeHttpServer {
         RuntimeHttpResponse::json(200, runtime_handoff_resource(&snapshot)?)
     }
 
+    fn core_architecture_readiness_response(
+        &self,
+        request: &RuntimeHttpRequest,
+    ) -> Result<RuntimeHttpResponse> {
+        let snapshot = self.load_snapshot_for_request(request)?;
+        RuntimeHttpResponse::json(
+            200,
+            runtime_core_architecture_readiness_resource(&snapshot)?,
+        )
+    }
+
+    fn core_architecture_gate_response(
+        &self,
+        request: &RuntimeHttpRequest,
+    ) -> Result<RuntimeHttpResponse> {
+        let snapshot = self.load_snapshot_for_request(request)?;
+        let readiness = runtime_core_architecture_readiness_resource(&snapshot)?;
+        let require_ready = request
+            .query
+            .get("require_ready")
+            .or_else(|| request.query.get("require-ready"))
+            .or_else(|| request.query.get("require_complete"))
+            .or_else(|| request.query.get("require-complete"))
+            .or_else(|| request.query.get("fail_if_incomplete"))
+            .or_else(|| request.query.get("fail-if-incomplete"))
+            .is_some_and(|value| query_bool(value));
+        let architecture_gate = readiness
+            .get("architecture_gate")
+            .cloned()
+            .unwrap_or_else(|| json!({}));
+        let ready_for_core_architecture = architecture_gate
+            .get("ready_for_core_architecture")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+
+        if require_ready && !ready_for_core_architecture {
+            return RuntimeHttpResponse::json(
+                428,
+                json!({
+                    "error": "core_architecture_gate_incomplete",
+                    "message": "Core architecture gate is not satisfied by the current Runtime snapshot.",
+                    "architecture_gate": architecture_gate,
+                    "summary": readiness.get("summary").cloned().unwrap_or_else(|| json!({})),
+                    "requirements": readiness.get("requirements").cloned().unwrap_or_else(|| json!([])),
+                    "commands": {
+                        "readiness": readiness.pointer("/architecture_gate/proof_commands/core_architecture_readiness").cloned().unwrap_or_else(|| json!("pool-cli core-architecture-readiness")),
+                        "package": readiness.pointer("/architecture_gate/proof_commands/core_architecture_package").cloned().unwrap_or_else(|| json!("pool-cli core-architecture-package --include-snapshot")),
+                        "smoke": readiness.pointer("/architecture_gate/proof_commands/core_architecture_smoke").cloned().unwrap_or_else(|| json!("cargo run -q -p pool-core --example run_prd_readiness_smoke -- target/core-architecture-readiness-smoke")),
+                        "workflow_probe": readiness.pointer("/architecture_gate/proof_commands/runtime_workflow_probe").cloned().unwrap_or_else(|| json!("pool-cli run-workflow --agent-mode stage --three-dgs-mode mock --unreal-mode mock"))
+                    }
+                }),
+            );
+        }
+
+        RuntimeHttpResponse::json(
+            200,
+            json!({
+                "kind": "pool_core_architecture_gate",
+                "overall_status": readiness.get("overall_status").cloned().unwrap_or_else(|| json!("partial")),
+                "summary": readiness.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "architecture_gate": architecture_gate,
+                "requirements": readiness.get("requirements").cloned().unwrap_or_else(|| json!([])),
+                "source_resources": readiness.get("source_resources").cloned().unwrap_or_else(|| json!([])),
+            }),
+        )
+    }
+
+    fn core_architecture_packages_response(
+        &self,
+        request: &RuntimeHttpRequest,
+    ) -> Result<RuntimeHttpResponse> {
+        let snapshot = self.load_snapshot_for_request(request)?;
+        RuntimeHttpResponse::json(200, core_architecture_package_catalog_resource(&snapshot))
+    }
+
+    fn core_architecture_package_response(&self, body: &str) -> Result<RuntimeHttpResponse> {
+        let request = match serde_json::from_str::<CreateCoreArchitecturePackageRequest>(body) {
+            Ok(request) => request,
+            Err(error) => {
+                return RuntimeHttpResponse::json(
+                    400,
+                    json!({
+                        "error": "invalid_core_architecture_package_request",
+                        "message": error.to_string(),
+                    }),
+                );
+            }
+        };
+        let project_slug = request
+            .project_slug
+            .clone()
+            .or_else(|| self.config.project_slug.clone())
+            .unwrap_or_else(|| "demo".to_string());
+        if project_slug == "*" {
+            return RuntimeHttpResponse::json(
+                400,
+                json!({
+                    "error": "core_architecture_package_requires_project",
+                    "expected": "Use a concrete project slug, not *",
+                }),
+            );
+        }
+        let output_dir = request.output_dir.clone().unwrap_or_else(|| {
+            self.default_output_dir(&project_slug)
+                .to_string_lossy()
+                .to_string()
+        });
+        let source = request
+            .source
+            .clone()
+            .filter(|source| !source.trim().is_empty())
+            .unwrap_or_else(|| "core-architecture-package".to_string());
+        let title = request
+            .title
+            .clone()
+            .filter(|title| !title.trim().is_empty())
+            .unwrap_or_else(|| "Pool core architecture package".to_string());
+
+        let repository = RuntimeRepository::open(&self.config.db_path)?;
+        repository.migrate()?;
+        let snapshot = repository.snapshot(Some(&project_slug))?;
+        let mut task = RuntimeTask::new(project_slug.clone(), title.clone());
+        task.node_id = request.node_id.clone();
+        task.provider_id = Some("core-architecture-package".to_string());
+        task.cost_estimate_tokens = 80;
+        task.status = TaskStatus::Running;
+        repository.insert_task(&task)?;
+        repository.insert_event(&RuntimeEvent::new(
+            project_slug.clone(),
+            RuntimeEventLevel::Info,
+            format!("Core architecture package started: {title}"),
+        ))?;
+
+        let package_dir = Path::new(&output_dir)
+            .join("control")
+            .join("core-architecture");
+        let report = write_core_architecture_package(
+            &package_dir,
+            &project_slug,
+            request.node_id.as_deref(),
+            &title,
+            &source,
+            request.include_snapshot.unwrap_or(true),
+            &snapshot,
+        )?;
+        let local_paths = json_string_array_at(&report, "local_paths");
+        let assets = repository.index_local_outputs(
+            &project_slug,
+            request.node_id.as_deref(),
+            Some("pool-core://architecture-package"),
+            &local_paths,
+        )?;
+        repository.update_task_status(&task.id, TaskStatus::Succeeded)?;
+        repository.insert_event(&RuntimeEvent::new(
+            project_slug.clone(),
+            RuntimeEventLevel::Ok,
+            format!(
+                "Core architecture package succeeded: {} files",
+                assets.len()
+            ),
+        ))?;
+        let task = repository.task_snapshot(&task.id)?;
+        let snapshot = repository.snapshot(self.config.project_slug.as_deref())?;
+
+        RuntimeHttpResponse::json(
+            201,
+            json!({
+                "kind": "pool_core_architecture_package",
+                "report": report,
+                "task": task,
+                "assets": assets,
+                "snapshot": snapshot,
+            }),
+        )
+    }
+
     fn prd_readiness_response(&self, request: &RuntimeHttpRequest) -> Result<RuntimeHttpResponse> {
         let snapshot = self.load_snapshot_for_request(request)?;
         RuntimeHttpResponse::json(200, runtime_prd_readiness_resource(&snapshot)?)
@@ -5010,6 +5240,14 @@ impl RuntimeHttpServer {
         }
 
         RuntimeHttpResponse::json(200, gate)
+    }
+
+    fn prd_completion_packages_response(
+        &self,
+        request: &RuntimeHttpRequest,
+    ) -> Result<RuntimeHttpResponse> {
+        let snapshot = self.load_snapshot_for_request(request)?;
+        RuntimeHttpResponse::json(200, prd_completion_package_catalog_resource(&snapshot))
     }
 
     fn prd_completion_package_response(&self, body: &str) -> Result<RuntimeHttpResponse> {
@@ -5401,6 +5639,17 @@ impl RuntimeHttpServer {
         RuntimeHttpResponse::json(
             200,
             production_evidence_handoff_value(&project_slug, output_root, source, &snapshot)?,
+        )
+    }
+
+    fn production_evidence_handoff_packages_response(
+        &self,
+        request: &RuntimeHttpRequest,
+    ) -> Result<RuntimeHttpResponse> {
+        let snapshot = self.load_snapshot_for_request(request)?;
+        RuntimeHttpResponse::json(
+            200,
+            production_evidence_handoff_package_catalog_resource(&snapshot),
         )
     }
 
@@ -6658,6 +6907,16 @@ struct CreatePrdCompletionPackageRequest {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+struct CreateCoreArchitecturePackageRequest {
+    project_slug: Option<String>,
+    node_id: Option<String>,
+    output_dir: Option<String>,
+    title: Option<String>,
+    source: Option<String>,
+    include_snapshot: Option<bool>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 struct CreateApiKeyRequest {
     project_slug: Option<String>,
     provider_id: Option<String>,
@@ -7632,8 +7891,22 @@ fn runtime_discovery_endpoints() -> Value {
         ("runtime_budget", "/api/runtime-budget"),
         ("runtime_preflight", "/api/runtime-preflight"),
         ("runtime_handoff", "/api/runtime-handoff"),
+        (
+            "core_architecture_readiness",
+            "/api/core-architecture-readiness",
+        ),
+        ("core_architecture_gate", "/api/core-architecture-gate"),
+        (
+            "core_architecture_packages",
+            "/api/core-architecture-packages",
+        ),
+        (
+            "core_architecture_package",
+            "/api/core-architecture-package",
+        ),
         ("prd_readiness", "/api/prd-readiness"),
         ("prd_completion_gate", "/api/prd-completion-gate"),
+        ("prd_completion_packages", "/api/prd-completion-packages"),
         ("prd_completion_package", "/api/prd-completion-package"),
         (
             "production_evidence_requirements",
@@ -7672,6 +7945,18 @@ fn runtime_discovery_endpoints() -> Value {
         ),
         ("mcp_runtime_handoff", "/api/mcp?uri=pool://runtime-handoff"),
         (
+            "mcp_core_architecture_readiness",
+            "/api/mcp?uri=pool://core-architecture-readiness",
+        ),
+        (
+            "mcp_core_architecture_gate",
+            "/api/mcp?uri=pool://core-architecture-gate",
+        ),
+        (
+            "mcp_core_architecture_packages",
+            "/api/mcp?uri=pool://core-architecture-packages",
+        ),
+        (
             "mcp_runtime_handoff_packages",
             "/api/mcp?uri=pool://runtime-handoff-packages",
         ),
@@ -7679,6 +7964,10 @@ fn runtime_discovery_endpoints() -> Value {
         (
             "mcp_prd_completion_gate",
             "/api/mcp?uri=pool://prd-completion-gate",
+        ),
+        (
+            "mcp_prd_completion_packages",
+            "/api/mcp?uri=pool://prd-completion-packages",
         ),
         (
             "mcp_production_evidence_requirements",
@@ -7935,10 +8224,86 @@ fn mcp_tool_discovery() -> Value {
             }),
         ),
         (
+            "pool_core_architecture_packages",
+            "Read generated core architecture proof package files, manifest, commands, and MCP resources.",
+            "read",
+            json!({
+                "project_slug": "<project>"
+            }),
+        ),
+        (
+            "pool_core_architecture_gate",
+            "Read the local core architecture hard gate. Set require_ready:true to make incomplete snapshots return HTTP 428.",
+            "read",
+            json!({
+                "project_slug": "<project>",
+                "require_ready": true
+            }),
+        ),
+        (
+            "pool_core_architecture_package",
+            "Write a local core architecture proof package with readiness, graph, execution plan, handoff, output catalog, strict PRD gate, manifest, and optional snapshot.",
+            "write",
+            json!({
+                "project_slug": "<project>",
+                "node_id": "agent",
+                "output_dir": "worlds/<project>/output",
+                "include_snapshot": true
+            }),
+        ),
+        (
+            "pool_prd_completion_packages",
+            "Read generated PRD completion proof package files, manifest, commands, and readiness status.",
+            "read",
+            json!({
+                "project_slug": "<project>"
+            }),
+        ),
+        (
+            "pool_prd_completion_package",
+            "Write a local PRD completion proof package with readiness, completion gate, production evidence requirements, manifest, and optional snapshot.",
+            "write",
+            json!({
+                "project_slug": "<project>",
+                "node_id": "agent",
+                "output_dir": "worlds/<project>/output",
+                "include_snapshot": true
+            }),
+        ),
+        (
+            "pool_production_evidence_handoff_packages",
+            "Read generated production evidence handoff package files, runner scripts, item files, and operator commands.",
+            "read",
+            json!({
+                "project_slug": "<project>"
+            }),
+        ),
+        (
+            "pool_production_evidence_handoff_package",
+            "Write a local production evidence handoff package with requirements, task queue, run plan, bundle scaffold, item files, runner script, preflight, and optional snapshot.",
+            "write",
+            json!({
+                "project_slug": "<project>",
+                "node_id": "agent",
+                "output_dir": "worlds/<project>/output",
+                "output_root": "worlds/<project>/output/production-evidence",
+                "include_items": true,
+                "include_snapshot": true
+            }),
+        ),
+        (
             "pool_provider_gateway_worker",
             "Read the Provider gateway worker contract.",
             "read",
             json!({}),
+        ),
+        (
+            "pool_provider_conformance_packages",
+            "Read generated Provider conformance package catalog from the asset ledger and local manifests.",
+            "read",
+            json!({
+                "project_slug": "<project>"
+            }),
         ),
         (
             "pool_provider_conformance_package",
@@ -7948,6 +8313,14 @@ fn mcp_tool_discovery() -> Value {
                 "project_slug": "<project>",
                 "provider_id": "worldlabs-marble",
                 "output_dir": "worlds/<project>/output"
+            }),
+        ),
+        (
+            "pool_integration_conformance_packages",
+            "Read generated integration conformance package catalog from the asset ledger and local manifests.",
+            "read",
+            json!({
+                "project_slug": "<project>"
             }),
         ),
         (
@@ -8001,6 +8374,14 @@ fn mcp_tool_discovery() -> Value {
             }),
         ),
         (
+            "pool_software_conformance_packages",
+            "Read generated software conformance package catalog from the asset ledger and local manifests.",
+            "read",
+            json!({
+                "project_slug": "<project>"
+            }),
+        ),
+        (
             "pool_software_conformance_package",
             "Write a local software adapter conformance package with contract, runbook, preflight, and runner script.",
             "write",
@@ -8027,6 +8408,14 @@ fn mcp_tool_discovery() -> Value {
             "Stage or execute Hermes / Agent CLI control sessions.",
             "write",
             json!({ "kind": "agent_cli" }),
+        ),
+        (
+            "pool_agent_conformance_packages",
+            "Read generated Agent/Hermes conformance package catalog from the asset ledger and local manifests.",
+            "read",
+            json!({
+                "project_slug": "<project>"
+            }),
         ),
         (
             "pool_agent_conformance_package",
@@ -11926,6 +12315,190 @@ fn write_prd_completion_package(
     }))
 }
 
+fn write_core_architecture_package(
+    package_dir: &Path,
+    project_slug: &str,
+    node_id: Option<&str>,
+    title: &str,
+    source: &str,
+    include_snapshot: bool,
+    snapshot: &RuntimeSnapshot,
+) -> Result<Value> {
+    let created_at = chrono::Utc::now().to_rfc3339();
+    let readiness = runtime_core_architecture_readiness_resource(snapshot)?;
+    let core_architecture_gate = json!({
+        "kind": "pool_core_architecture_gate",
+        "overall_status": readiness.get("overall_status").cloned().unwrap_or_else(|| json!("partial")),
+        "summary": readiness.get("summary").cloned().unwrap_or_else(|| json!({})),
+        "architecture_gate": readiness.get("architecture_gate").cloned().unwrap_or_else(|| json!({})),
+        "requirements": readiness.get("requirements").cloned().unwrap_or_else(|| json!([])),
+        "source_resources": readiness.get("source_resources").cloned().unwrap_or_else(|| json!([])),
+    });
+    let runtime_graph = runtime_graph_resource(snapshot)?;
+    let execution_plan = runtime_execution_plan_resource(snapshot)?;
+    let handoff = runtime_handoff_resource(snapshot)?;
+    let output_catalog = serde_json::to_value(output_package_catalog_resource(snapshot))?;
+    let strict_prd_completion_gate = runtime_prd_completion_gate_resource(snapshot)?;
+    let ready_for_core_architecture = readiness
+        .pointer("/architecture_gate/ready_for_core_architecture")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let status = readiness
+        .pointer("/architecture_gate/status")
+        .and_then(Value::as_str)
+        .unwrap_or("unknown");
+
+    fs::create_dir_all(package_dir).with_context(|| {
+        format!(
+            "create core architecture package dir {}",
+            package_dir.display()
+        )
+    })?;
+
+    let request_path = package_dir.join(".1-core-architecture-package-request.json");
+    let readiness_path = package_dir.join("1-core-architecture-readiness.json");
+    let core_gate_path = package_dir.join("2-core-architecture-gate.json");
+    let graph_path = package_dir.join("3-runtime-graph.json");
+    let execution_plan_path = package_dir.join("4-runtime-execution-plan.json");
+    let handoff_path = package_dir.join("5-runtime-handoff.json");
+    let output_catalog_path = package_dir.join("6-output-packages.json");
+    let strict_gate_path = package_dir.join("7-strict-prd-completion-gate.json");
+    let manifest_path = package_dir.join("8-core-architecture-package-manifest.json");
+    let snapshot_path = include_snapshot.then(|| package_dir.join("9-runtime-snapshot.json"));
+
+    let request_value = json!({
+        "kind": "pool_core_architecture_package_request",
+        "project_slug": project_slug,
+        "node_id": node_id,
+        "title": title,
+        "source": source,
+        "include_snapshot": include_snapshot,
+        "created_at": created_at,
+        "local_files_authoritative": true,
+        "provider_urls_are_provenance": true,
+        "production_evidence_is_out_of_scope": true,
+    });
+    write_server_json_file(&request_path, &request_value)?;
+    write_server_json_file(&readiness_path, &readiness)?;
+    write_server_json_file(&core_gate_path, &core_architecture_gate)?;
+    write_server_json_file(&graph_path, &runtime_graph)?;
+    write_server_json_file(&execution_plan_path, &execution_plan)?;
+    write_server_json_file(&handoff_path, &handoff)?;
+    write_server_json_file(&output_catalog_path, &output_catalog)?;
+    write_server_json_file(&strict_gate_path, &strict_prd_completion_gate)?;
+    if let Some(snapshot_path) = &snapshot_path {
+        write_server_json_file(snapshot_path, &serde_json::to_value(snapshot)?)?;
+    }
+
+    let mut local_paths = vec![
+        path_string_lossy(&request_path),
+        path_string_lossy(&readiness_path),
+        path_string_lossy(&core_gate_path),
+        path_string_lossy(&graph_path),
+        path_string_lossy(&execution_plan_path),
+        path_string_lossy(&handoff_path),
+        path_string_lossy(&output_catalog_path),
+        path_string_lossy(&strict_gate_path),
+    ];
+    if let Some(snapshot_path) = &snapshot_path {
+        local_paths.push(path_string_lossy(snapshot_path));
+    }
+
+    let manifest = json!({
+        "kind": "pool_core_architecture_package_manifest",
+        "version": 1,
+        "project_slug": project_slug,
+        "node_id": node_id,
+        "title": title,
+        "created_at": created_at,
+        "source": source,
+        "status": status,
+        "ready_for_core_architecture": ready_for_core_architecture,
+        "production_evidence_is_out_of_scope": true,
+        "summary": {
+            "core_architecture": readiness.get("summary").cloned().unwrap_or_else(|| json!({})),
+            "architecture_gate": readiness.get("architecture_gate").cloned().unwrap_or_else(|| json!({})),
+            "core_architecture_gate": core_architecture_gate.get("architecture_gate").cloned().unwrap_or_else(|| json!({})),
+            "runtime_graph": runtime_graph.get("summary").cloned().unwrap_or_else(|| json!({})),
+            "execution_plan": execution_plan.get("summary").cloned().unwrap_or_else(|| json!({})),
+            "runtime_handoff": handoff.get("summary").cloned().unwrap_or_else(|| json!({})),
+            "output_packages": output_catalog.get("summary").cloned().unwrap_or_else(|| json!({})),
+            "strict_prd_completion_gate": strict_prd_completion_gate.get("completion_gate").cloned().unwrap_or_else(|| json!({})),
+        },
+        "paths": {
+            "request": path_string_lossy(&request_path),
+            "core_architecture_readiness": path_string_lossy(&readiness_path),
+            "core_architecture_gate": path_string_lossy(&core_gate_path),
+            "runtime_graph": path_string_lossy(&graph_path),
+            "runtime_execution_plan": path_string_lossy(&execution_plan_path),
+            "runtime_handoff": path_string_lossy(&handoff_path),
+            "output_packages": path_string_lossy(&output_catalog_path),
+            "strict_prd_completion_gate": path_string_lossy(&strict_gate_path),
+            "manifest": path_string_lossy(&manifest_path),
+            "snapshot": snapshot_path.as_ref().map(|path| path_string_lossy(path)),
+        },
+        "commands": {
+            "core_architecture_gate": format!("pool-cli --project {project_slug} core-architecture-gate --require-ready"),
+            "core_architecture_readiness": format!("pool-cli --project {project_slug} core-architecture-readiness"),
+            "runtime_graph": format!("pool-cli --project {project_slug} runtime-graph"),
+            "runtime_execution_plan": format!("pool-cli --project {project_slug} runtime-execution-plan"),
+            "runtime_handoff": format!("pool-cli --project {project_slug} runtime-handoff"),
+            "output_packages": format!("pool-cli --project {project_slug} output-packages"),
+            "core_architecture_package": format!("pool-cli --project {project_slug} core-architecture-package --output-dir worlds/{project_slug}/output --include-snapshot"),
+            "core_architecture_smoke": "cargo run -q -p pool-core --example run_prd_readiness_smoke -- target/core-architecture-readiness-smoke",
+            "strict_prd_completion_gate": format!("pool-cli --project {project_slug} prd-completion-gate --require-complete"),
+        },
+        "read_order": [
+            path_string_lossy(&readiness_path),
+            path_string_lossy(&core_gate_path),
+            path_string_lossy(&graph_path),
+            path_string_lossy(&execution_plan_path),
+            path_string_lossy(&handoff_path),
+            path_string_lossy(&output_catalog_path),
+            path_string_lossy(&strict_gate_path),
+            path_string_lossy(&manifest_path),
+        ],
+        "operator_checklist": [
+            "Confirm ready_for_core_architecture is true before claiming local core architecture completion.",
+            "Use 7-strict-prd-completion-gate.json to keep production evidence closeout separate from core architecture completion.",
+            "Archive this package with the runtime handoff package when handing work to Hermes, Agent CLI, or the 5-person content team."
+        ],
+        "mcp_resources": [
+            "pool://core-architecture-gate",
+            "pool://core-architecture-readiness",
+            "pool://runtime-graph",
+            "pool://runtime-execution-plan",
+            "pool://runtime-handoff",
+            "pool://output-packages",
+            "pool://prd-completion-gate"
+        ],
+    });
+    write_server_json_file(&manifest_path, &manifest)?;
+    local_paths.push(path_string_lossy(&manifest_path));
+
+    Ok(json!({
+        "status": "Succeeded",
+        "project_slug": project_slug,
+        "node_id": node_id,
+        "title": title,
+        "source": source,
+        "package_dir": path_string_lossy(package_dir),
+        "request_path": path_string_lossy(&request_path),
+        "readiness_path": path_string_lossy(&readiness_path),
+        "core_architecture_gate_path": path_string_lossy(&core_gate_path),
+        "runtime_graph_path": path_string_lossy(&graph_path),
+        "runtime_execution_plan_path": path_string_lossy(&execution_plan_path),
+        "runtime_handoff_path": path_string_lossy(&handoff_path),
+        "output_packages_path": path_string_lossy(&output_catalog_path),
+        "strict_prd_completion_gate_path": path_string_lossy(&strict_gate_path),
+        "manifest_path": path_string_lossy(&manifest_path),
+        "snapshot_path": snapshot_path.as_ref().map(|path| path_string_lossy(path)),
+        "ready_for_core_architecture": ready_for_core_architecture,
+        "architecture_status": status,
+        "local_paths": local_paths,
+    }))
+}
+
 fn write_server_json_file(path: &Path, value: &Value) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)
@@ -14091,7 +14664,140 @@ mod tests {
         assert!(value["assets"].as_array().unwrap().len() >= 5);
         assert_eq!(value["task"]["status"], "Succeeded");
 
+        let catalog_response = server.handle_path("/api/prd-completion-packages").unwrap();
+        let catalog: Value = serde_json::from_str(&catalog_response.body).unwrap();
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_prd_completion_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(catalog["summary"]["ready_packages"], 1);
+        assert_eq!(
+            catalog["packages"][0]["manifest_path"],
+            value["report"]["manifest_path"]
+        );
+        assert_eq!(
+            catalog["packages"][0]["ready_for_completion"],
+            value["report"]["ready_for_completion"]
+        );
+
         let _ = fs::remove_dir_all(output_dir);
+    }
+
+    #[test]
+    fn post_core_architecture_package_writes_proof_files() {
+        let db_path = temp_db_path("runtime-http-core-architecture-package");
+        let output_dir = temp_control_dir("runtime-http-core-architecture-package-output");
+        let repository = RuntimeRepository::open(&db_path).unwrap();
+        repository.migrate().unwrap();
+        repository
+            .persist_plan(&build_default_content_burst_plan(
+                "demo",
+                "Pool core architecture package test",
+            ))
+            .unwrap();
+        drop(repository);
+
+        let server =
+            RuntimeHttpServer::new(RuntimeHttpConfig::new(&db_path).with_project_slug("demo"));
+        let body = json!({
+            "project_slug": "demo",
+            "node_id": "agent",
+            "title": "Core architecture proof package",
+            "output_dir": output_dir.to_string_lossy(),
+            "source": "server-test",
+            "include_snapshot": true
+        });
+        let response = server
+            .handle_request_with_body("POST", "/api/core-architecture-package", &body.to_string())
+            .unwrap();
+        let value: Value = serde_json::from_str(&response.body).unwrap();
+
+        assert_eq!(response.status_code, 201);
+        assert_eq!(value["kind"], "pool_core_architecture_package");
+        assert_eq!(value["report"]["ready_for_core_architecture"], false);
+        assert!(PathBuf::from(value["report"]["readiness_path"].as_str().unwrap()).exists());
+        assert!(PathBuf::from(
+            value["report"]["core_architecture_gate_path"]
+                .as_str()
+                .unwrap()
+        )
+        .exists());
+        assert!(PathBuf::from(
+            value["report"]["runtime_execution_plan_path"]
+                .as_str()
+                .unwrap()
+        )
+        .exists());
+        assert!(PathBuf::from(value["report"]["runtime_handoff_path"].as_str().unwrap()).exists());
+        assert!(PathBuf::from(
+            value["report"]["strict_prd_completion_gate_path"]
+                .as_str()
+                .unwrap()
+        )
+        .exists());
+        assert!(PathBuf::from(value["report"]["snapshot_path"].as_str().unwrap()).exists());
+        assert!(value["assets"].as_array().unwrap().len() >= 8);
+        assert_eq!(value["task"]["status"], "Succeeded");
+
+        let catalog_response = server
+            .handle_path("/api/core-architecture-packages")
+            .unwrap();
+        let catalog: Value = serde_json::from_str(&catalog_response.body).unwrap();
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_core_architecture_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(catalog["summary"]["ready_packages"], 1);
+        assert_eq!(
+            catalog["packages"][0]["manifest_path"],
+            value["report"]["manifest_path"]
+        );
+        assert_eq!(
+            catalog["packages"][0]["core_architecture_gate_path"],
+            value["report"]["core_architecture_gate_path"]
+        );
+        assert_eq!(catalog["packages"][0]["ready_for_core_architecture"], false);
+
+        let _ = fs::remove_dir_all(output_dir);
+    }
+
+    #[test]
+    fn core_architecture_gate_can_require_ready() {
+        let db_path = temp_db_path("runtime-http-core-architecture-gate");
+        let repository = RuntimeRepository::open(&db_path).unwrap();
+        repository.migrate().unwrap();
+        repository
+            .persist_plan(&build_default_content_burst_plan(
+                "demo",
+                "Pool core architecture gate test",
+            ))
+            .unwrap();
+        drop(repository);
+
+        let server =
+            RuntimeHttpServer::new(RuntimeHttpConfig::new(&db_path).with_project_slug("demo"));
+
+        let gate = server.handle_path("/api/core-architecture-gate").unwrap();
+        let gate_value: Value = serde_json::from_str(&gate.body).unwrap();
+        assert_eq!(gate.status_code, 200);
+        assert_eq!(gate_value["kind"], "pool_core_architecture_gate");
+        assert_eq!(
+            gate_value["architecture_gate"]["ready_for_core_architecture"],
+            false
+        );
+
+        let required = server
+            .handle_path("/api/core-architecture-gate?require_ready=true")
+            .unwrap();
+        let required_value: Value = serde_json::from_str(&required.body).unwrap();
+        assert_eq!(required.status_code, 428);
+        assert_eq!(required_value["error"], "core_architecture_gate_incomplete");
+        assert_eq!(
+            required_value["architecture_gate"]["ready_for_core_architecture"],
+            false
+        );
+        assert!(required_value["commands"]["workflow_probe"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("run-workflow"));
     }
 
     #[test]
@@ -14582,15 +15288,29 @@ mod tests {
                 && tool["example_arguments"]["adapter_id"] == "resolve"));
         assert!(mcp_tools
             .iter()
+            .any(|tool| tool["name"] == "pool_software_conformance_packages"
+                && tool["transport"] == "mcp_stdio"
+                && tool["category"] == "read"));
+        assert!(mcp_tools
+            .iter()
             .any(|tool| tool["name"] == "pool_provider_conformance_package"
                 && tool["transport"] == "mcp_stdio"
                 && tool["category"] == "write"
                 && tool["example_arguments"]["provider_id"] == "worldlabs-marble"));
+        assert!(mcp_tools
+            .iter()
+            .any(|tool| tool["name"] == "pool_provider_conformance_packages"
+                && tool["transport"] == "mcp_stdio"
+                && tool["category"] == "read"));
         assert!(mcp_tools.iter().any(|tool| tool["name"]
             == "pool_integration_conformance_package"
             && tool["transport"] == "mcp_stdio"
             && tool["category"] == "write"
             && tool["example_arguments"]["agent_kind"] == "all"));
+        assert!(mcp_tools.iter().any(|tool| tool["name"]
+            == "pool_integration_conformance_packages"
+            && tool["transport"] == "mcp_stdio"
+            && tool["category"] == "read"));
         assert!(mcp_tools
             .iter()
             .any(|tool| tool["name"] == "pool_integration_readiness"
@@ -14602,6 +15322,11 @@ mod tests {
                 && tool["transport"] == "mcp_stdio"
                 && tool["category"] == "write"
                 && tool["example_arguments"]["kind"] == "all"));
+        assert!(mcp_tools
+            .iter()
+            .any(|tool| tool["name"] == "pool_agent_conformance_packages"
+                && tool["transport"] == "mcp_stdio"
+                && tool["category"] == "read"));
         assert_eq!(
             value["endpoints"]["node_context"],
             "/api/node-context?node_id=<node-id>"
@@ -18846,6 +19571,24 @@ mod tests {
                 "control/software-conformance/resolve/5-software-conformance-package-manifest.json"
             )
             .exists());
+        let catalog_response = server
+            .handle_path("/api/software-conformance-packages")
+            .unwrap();
+        let catalog: serde_json::Value = serde_json::from_str(&catalog_response.body).unwrap();
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_software_conformance_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(catalog["summary"]["ready_packages"], 1);
+        assert_eq!(catalog["packages"][0]["target_id"], "resolve");
+        assert_eq!(catalog["packages"][0]["status"], "ready");
+        assert!(catalog["packages"][0]["manifest_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("5-software-conformance-package-manifest.json"));
+        assert!(catalog["packages"][0]["runner_script_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("4-software-conformance-runner.sh"));
 
         std::fs::remove_dir_all(output_dir).unwrap();
     }
@@ -18924,6 +19667,24 @@ mod tests {
                 "control/provider-conformance/worldlabs-marble/6-provider-conformance-package-manifest.json"
             )
             .exists());
+        let catalog_response = server
+            .handle_path("/api/provider-conformance-packages")
+            .unwrap();
+        let catalog: serde_json::Value = serde_json::from_str(&catalog_response.body).unwrap();
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_provider_conformance_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(catalog["summary"]["ready_packages"], 1);
+        assert_eq!(catalog["packages"][0]["target_id"], "worldlabs-marble");
+        assert_eq!(catalog["packages"][0]["status"], "ready");
+        assert!(catalog["packages"][0]["gateway_worker_contract_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("2-provider-gateway-worker-contract.json"));
+        assert!(catalog["packages"][0]["runner_script_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("5-provider-conformance-runner.sh"));
 
         std::fs::remove_dir_all(output_dir).unwrap();
     }
@@ -18990,6 +19751,24 @@ mod tests {
         assert!(output_dir
             .join("control/agent-conformance/all/5-agent-conformance-package-manifest.json")
             .exists());
+        let catalog_response = server
+            .handle_path("/api/agent-conformance-packages")
+            .unwrap();
+        let catalog: serde_json::Value = serde_json::from_str(&catalog_response.body).unwrap();
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_agent_conformance_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(catalog["summary"]["ready_packages"], 1);
+        assert_eq!(catalog["packages"][0]["target_id"], "all");
+        assert_eq!(catalog["packages"][0]["status"], "ready");
+        assert!(catalog["packages"][0]["contract_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("1-agent-session-contract.json"));
+        assert!(catalog["packages"][0]["runner_script_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("4-agent-conformance-runner.sh"));
 
         std::fs::remove_dir_all(output_dir).unwrap();
     }
@@ -19071,6 +19850,22 @@ mod tests {
                 "control/integration-conformance/agent/all/5-agent-conformance-package-manifest.json"
             )
             .exists());
+        let catalog_response = server
+            .handle_path("/api/integration-conformance-packages")
+            .unwrap();
+        let catalog: serde_json::Value = serde_json::from_str(&catalog_response.body).unwrap();
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_integration_conformance_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(catalog["summary"]["ready_packages"], 1);
+        assert_eq!(catalog["packages"][0]["status"], "ready");
+        assert_eq!(catalog["packages"][0]["summary"]["providers"], 1);
+        assert_eq!(catalog["packages"][0]["summary"]["software_adapters"], 1);
+        assert_eq!(catalog["packages"][0]["summary"]["agent"], true);
+        assert!(catalog["packages"][0]["runner_script_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("2-integration-conformance-runner.sh"));
 
         std::fs::remove_dir_all(output_dir).unwrap();
     }
@@ -19494,6 +20289,55 @@ mod tests {
                     .as_str()
                     .unwrap_or_default()
                     .contains("provider-gateway-worker")));
+
+        let catalog_response = server
+            .handle_path("/api/production-evidence/handoff-packages")
+            .unwrap();
+        let catalog: serde_json::Value = serde_json::from_str(&catalog_response.body).unwrap();
+        assert_eq!(catalog_response.status_code, 200);
+        assert_eq!(catalog["kind"], "pool_production_evidence_handoff_packages");
+        assert_eq!(catalog["summary"]["package_count"], 1);
+        assert_eq!(catalog["summary"]["ready_packages"], 1);
+        assert_eq!(catalog["summary"]["runner_packages"], 1);
+        assert!(catalog["summary"]["indexed_files"].as_u64().unwrap() > 20);
+        assert!(catalog["summary"]["item_files"].as_u64().unwrap() >= 20);
+        let catalog_package = &catalog["packages"][0];
+        assert_eq!(catalog_package["status"], "ready");
+        assert_eq!(catalog_package["item_count"], value["report"]["item_count"]);
+        assert!(catalog_package["manifest_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("6-production-evidence-package-manifest.json"));
+        assert!(catalog_package["runner_script_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("7-production-evidence-runner.sh"));
+        assert!(catalog_package["runner_preflight_path"]
+            .as_str()
+            .unwrap()
+            .ends_with("8-production-evidence-runner-preflight.json"));
+        assert_eq!(
+            catalog_package["local_file_failures"]
+                .as_array()
+                .unwrap()
+                .len(),
+            0
+        );
+        assert!(catalog_package["provider_gateway_worker_start_commands"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|command| command["upstream_env"] == "POOL_3DGS_GATEWAY_UPSTREAM_ENDPOINT"));
+        assert!(catalog_package["software_bridge_worker_start_commands"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|command| command["adapter_id"] == "resolve"));
+        assert!(catalog["policy"]["expected_files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|file| file == "7-production-evidence-runner.sh"));
 
         std::fs::remove_dir_all(output_dir).unwrap();
     }

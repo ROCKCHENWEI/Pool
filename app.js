@@ -26,9 +26,16 @@ const initialState = {
   runtimeRunNextResult: null,
   runtimeHandoff: null,
   runtimeHandoffPackage: null,
+  runtimeCoreArchitectureReadiness: null,
+  runtimeCoreArchitectureGate: null,
+  runtimeCoreArchitecturePackage: null,
   runtimePrdReadiness: null,
   runtimePrdCompletionGate: null,
   runtimePrdCompletionPackage: null,
+  providerConformancePackage: null,
+  softwareConformancePackage: null,
+  agentConformancePackage: null,
+  integrationConformancePackage: null,
   productionEvidenceRequirements: null,
   productionEvidenceTasks: null,
   productionEvidenceHandoff: null,
@@ -574,6 +581,10 @@ function saveState() {
     runtimePrdReadiness: null,
     runtimePrdCompletionGate: null,
     runtimePrdCompletionPackage: null,
+    providerConformancePackage: null,
+    softwareConformancePackage: null,
+    agentConformancePackage: null,
+    integrationConformancePackage: null,
     productionEvidenceRequirements: null,
     productionEvidenceTasks: null,
     productionEvidenceItemTemplate: null,
@@ -802,12 +813,32 @@ function runtimeHandoffUrl(baseUrl) {
   return `${baseUrl}/api/runtime-handoff${runtimeQuerySuffix()}`;
 }
 
+function runtimeCoreArchitectureReadinessUrl(baseUrl) {
+  return `${baseUrl}/api/core-architecture-readiness${runtimeQuerySuffix()}`;
+}
+
+function runtimeCoreArchitectureGateUrl(baseUrl) {
+  return `${baseUrl}/api/core-architecture-gate${runtimeQuerySuffix()}`;
+}
+
+function runtimeCoreArchitecturePackagesUrl(baseUrl) {
+  return `${baseUrl}/api/core-architecture-packages${runtimeQuerySuffix()}`;
+}
+
+function runtimeCoreArchitecturePackageUrl(baseUrl) {
+  return `${baseUrl}/api/core-architecture-package`;
+}
+
 function runtimePrdReadinessUrl(baseUrl) {
   return `${baseUrl}/api/prd-readiness${runtimeQuerySuffix()}`;
 }
 
 function runtimePrdCompletionGateUrl(baseUrl) {
   return `${baseUrl}/api/prd-completion-gate${runtimeQuerySuffix()}`;
+}
+
+function runtimePrdCompletionPackagesUrl(baseUrl) {
+  return `${baseUrl}/api/prd-completion-packages${runtimeQuerySuffix()}`;
 }
 
 function runtimePrdCompletionPackageUrl(baseUrl) {
@@ -824,6 +855,10 @@ function runtimeProductionEvidenceTasksUrl(baseUrl) {
 
 function runtimeProductionEvidenceHandoffUrl(baseUrl) {
   return `${baseUrl}/api/production-evidence/handoff${runtimeQuerySuffix()}`;
+}
+
+function runtimeProductionEvidenceHandoffPackagesUrl(baseUrl) {
+  return `${baseUrl}/api/production-evidence/handoff-packages${runtimeQuerySuffix()}`;
 }
 
 function runtimeProductionEvidenceRunPlanUrl(baseUrl, options = {}) {
@@ -911,6 +946,10 @@ function runtimeHandoffPackageUrl(baseUrl) {
   return `${baseUrl}/api/handoff-packages`;
 }
 
+function runtimeHandoffPackagesUrl(baseUrl) {
+  return `${baseUrl}/api/handoff-packages${runtimeQuerySuffix()}`;
+}
+
 function runtimeDiscoveryUrl(baseUrl) {
   return `${baseUrl}/api/discovery${runtimeQuerySuffix()}`;
 }
@@ -953,11 +992,11 @@ function runtimeProviderGatewayWorkerUrl(baseUrl) {
 }
 
 function runtimeProviderConformancePackagesUrl(baseUrl) {
-  return `${baseUrl}/api/provider-conformance-packages`;
+  return `${baseUrl}/api/provider-conformance-packages${runtimeQuerySuffix()}`;
 }
 
 function runtimeIntegrationConformancePackagesUrl(baseUrl) {
-  return `${baseUrl}/api/integration-conformance-packages`;
+  return `${baseUrl}/api/integration-conformance-packages${runtimeQuerySuffix()}`;
 }
 
 function runtimeSoftwareContractsUrl(baseUrl) {
@@ -965,11 +1004,11 @@ function runtimeSoftwareContractsUrl(baseUrl) {
 }
 
 function runtimeSoftwareConformancePackagesUrl(baseUrl) {
-  return `${baseUrl}/api/software-conformance-packages`;
+  return `${baseUrl}/api/software-conformance-packages${runtimeQuerySuffix()}`;
 }
 
 function runtimeAgentConformancePackagesUrl(baseUrl) {
-  return `${baseUrl}/api/agent-conformance-packages`;
+  return `${baseUrl}/api/agent-conformance-packages${runtimeQuerySuffix()}`;
 }
 
 function runtimePromptsUrl(baseUrl) {
@@ -1103,7 +1142,7 @@ async function applyRuntimeHttpSnapshot(baseUrl, options = {}) {
   try {
     const healthUrl = runtimeHealthUrl(baseUrl);
     const snapshotUrl = runtimeSnapshotUrl(baseUrl);
-    const [health, snapshot, runtimeGraph, runtimeExecutionPlan, runtimeBudget, apiKeyAudit, runtimePreflight, runtimeHandoff, runtimePrdReadiness, runtimePrdCompletionGate, productionEvidenceRequirements, productionEvidenceTasks, productionEvidenceHandoff, outputPackages, runtimeDiscovery, adapters, integrationReadiness, providerContracts, providerGatewayWorker, softwareContracts, desktopContract, prompts, projects, desktopRequests] = await Promise.all([
+    const [health, snapshot, runtimeGraph, runtimeExecutionPlan, runtimeBudget, apiKeyAudit, runtimePreflight, runtimeHandoff, runtimeHandoffPackages, runtimeCoreArchitectureReadiness, runtimeCoreArchitectureGate, runtimeCoreArchitecturePackages, runtimePrdReadiness, runtimePrdCompletionGate, runtimePrdCompletionPackages, productionEvidenceRequirements, productionEvidenceTasks, productionEvidenceHandoff, productionEvidenceHandoffPackages, providerConformancePackages, softwareConformancePackages, agentConformancePackages, integrationConformancePackages, outputPackages, runtimeDiscovery, adapters, integrationReadiness, providerContracts, providerGatewayWorker, softwareContracts, desktopContract, prompts, projects, desktopRequests] = await Promise.all([
       fetchJson(healthUrl),
       fetchJson(snapshotUrl),
       fetchJson(runtimeGraphUrl(baseUrl)).catch(() => null),
@@ -1112,11 +1151,21 @@ async function applyRuntimeHttpSnapshot(baseUrl, options = {}) {
       fetchJson(runtimeApiKeysUrl(baseUrl)).catch(() => null),
       fetchJson(runtimePreflightUrl(baseUrl)).catch(() => null),
       fetchJson(runtimeHandoffUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimeHandoffPackagesUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimeCoreArchitectureReadinessUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimeCoreArchitectureGateUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimeCoreArchitecturePackagesUrl(baseUrl)).catch(() => null),
       fetchJson(runtimePrdReadinessUrl(baseUrl)).catch(() => null),
       fetchJson(runtimePrdCompletionGateUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimePrdCompletionPackagesUrl(baseUrl)).catch(() => null),
       fetchJson(runtimeProductionEvidenceRequirementsUrl(baseUrl)).catch(() => null),
       fetchJson(runtimeProductionEvidenceTasksUrl(baseUrl)).catch(() => null),
       fetchJson(runtimeProductionEvidenceHandoffUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimeProductionEvidenceHandoffPackagesUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimeProviderConformancePackagesUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimeSoftwareConformancePackagesUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimeAgentConformancePackagesUrl(baseUrl)).catch(() => null),
+      fetchJson(runtimeIntegrationConformancePackagesUrl(baseUrl)).catch(() => null),
       fetchJson(runtimeOutputPackagesUrl(baseUrl)).catch(() => null),
       fetchJson(runtimeDiscoveryUrl(baseUrl)).catch(() => null),
       fetchJson(runtimeAdaptersUrl(baseUrl)).catch(() => null),
@@ -1147,11 +1196,21 @@ async function applyRuntimeHttpSnapshot(baseUrl, options = {}) {
       apiKeyAudit,
       runtimePreflight,
       runtimeHandoff,
+      runtimeHandoffPackages,
+      runtimeCoreArchitectureReadiness,
+      runtimeCoreArchitectureGate,
+      runtimeCoreArchitecturePackages,
       runtimePrdReadiness,
       runtimePrdCompletionGate,
+      runtimePrdCompletionPackages,
       productionEvidenceRequirements,
       productionEvidenceTasks,
       productionEvidenceHandoff,
+      productionEvidenceHandoffPackages,
+      providerConformancePackages,
+      softwareConformancePackages,
+      agentConformancePackages,
+      integrationConformancePackages,
       outputPackages,
       runtimeDiscovery,
       integrationReadiness,
@@ -1176,11 +1235,21 @@ async function mergeRuntimeMutationSnapshot(snapshot, runtime, options = {}) {
   const apiKeyAudit = options.apiKeyAudit ?? await fetchJson(runtimeApiKeysUrl(runtime)).catch(() => state.apiKeyAudit);
   const runtimePreflight = options.runtimePreflight ?? await fetchJson(runtimePreflightUrl(runtime)).catch(() => state.runtimePreflight);
   const runtimeHandoff = options.runtimeHandoff ?? await fetchJson(runtimeHandoffUrl(runtime)).catch(() => state.runtimeHandoff);
+  const runtimeHandoffPackages = options.runtimeHandoffPackages ?? await fetchJson(runtimeHandoffPackagesUrl(runtime)).catch(() => null);
+  const runtimeCoreArchitectureReadiness = options.runtimeCoreArchitectureReadiness ?? await fetchJson(runtimeCoreArchitectureReadinessUrl(runtime)).catch(() => state.runtimeCoreArchitectureReadiness);
+  const runtimeCoreArchitectureGate = options.runtimeCoreArchitectureGate ?? await fetchJson(runtimeCoreArchitectureGateUrl(runtime)).catch(() => state.runtimeCoreArchitectureGate);
+  const runtimeCoreArchitecturePackages = options.runtimeCoreArchitecturePackages ?? await fetchJson(runtimeCoreArchitecturePackagesUrl(runtime)).catch(() => null);
   const runtimePrdReadiness = options.runtimePrdReadiness ?? await fetchJson(runtimePrdReadinessUrl(runtime)).catch(() => state.runtimePrdReadiness);
   const runtimePrdCompletionGate = options.runtimePrdCompletionGate ?? await fetchJson(runtimePrdCompletionGateUrl(runtime)).catch(() => state.runtimePrdCompletionGate);
+  const runtimePrdCompletionPackages = options.runtimePrdCompletionPackages ?? await fetchJson(runtimePrdCompletionPackagesUrl(runtime)).catch(() => null);
   const productionEvidenceRequirements = options.productionEvidenceRequirements ?? await fetchJson(runtimeProductionEvidenceRequirementsUrl(runtime)).catch(() => state.productionEvidenceRequirements);
   const productionEvidenceTasks = options.productionEvidenceTasks ?? await fetchJson(runtimeProductionEvidenceTasksUrl(runtime)).catch(() => state.productionEvidenceTasks);
   const productionEvidenceHandoff = options.productionEvidenceHandoff ?? await fetchJson(runtimeProductionEvidenceHandoffUrl(runtime)).catch(() => state.productionEvidenceHandoff);
+  const productionEvidenceHandoffPackages = options.productionEvidenceHandoffPackages ?? await fetchJson(runtimeProductionEvidenceHandoffPackagesUrl(runtime)).catch(() => null);
+  const providerConformancePackages = options.providerConformancePackages ?? await fetchJson(runtimeProviderConformancePackagesUrl(runtime)).catch(() => null);
+  const softwareConformancePackages = options.softwareConformancePackages ?? await fetchJson(runtimeSoftwareConformancePackagesUrl(runtime)).catch(() => null);
+  const agentConformancePackages = options.agentConformancePackages ?? await fetchJson(runtimeAgentConformancePackagesUrl(runtime)).catch(() => null);
+  const integrationConformancePackages = options.integrationConformancePackages ?? await fetchJson(runtimeIntegrationConformancePackagesUrl(runtime)).catch(() => null);
   const outputPackages = options.outputPackages ?? await fetchJson(runtimeOutputPackagesUrl(runtime)).catch(() => null);
   const runtimeDiscovery = options.runtimeDiscovery ?? await fetchJson(runtimeDiscoveryUrl(runtime)).catch(() => state.runtimeDiscovery);
   const integrationReadiness = options.integrationReadiness ?? await fetchJson(runtimeIntegrationReadinessUrl(runtime)).catch(() => state.integrationReadiness);
@@ -1206,11 +1275,21 @@ async function mergeRuntimeMutationSnapshot(snapshot, runtime, options = {}) {
     apiKeyAudit,
     runtimePreflight,
     runtimeHandoff,
+    runtimeHandoffPackages,
+    runtimeCoreArchitectureReadiness,
+    runtimeCoreArchitectureGate,
+    runtimeCoreArchitecturePackages,
     runtimePrdReadiness,
     runtimePrdCompletionGate,
+    runtimePrdCompletionPackages,
     productionEvidenceRequirements,
     productionEvidenceTasks,
     productionEvidenceHandoff,
+    productionEvidenceHandoffPackages,
+    providerConformancePackages,
+    softwareConformancePackages,
+    agentConformancePackages,
+    integrationConformancePackages,
     outputPackages,
     runtimeDiscovery,
     integrationReadiness,
@@ -1680,11 +1759,19 @@ function mergeRuntimeSnapshot(snapshot, url, options = {}) {
     : null;
   state.runtimeBudget = normalizeRuntimeBudget(options.runtimeBudget ?? deriveRuntimeBudgetFromSnapshot(snapshot));
   state.runtimePreflight = normalizeRuntimePreflight(options.runtimePreflight ?? deriveRuntimePreflightFromSnapshot(snapshot));
+  state.runtimeCoreArchitectureReadiness = normalizeRuntimeCoreArchitectureReadiness(options.runtimeCoreArchitectureReadiness);
+  state.runtimeCoreArchitectureGate = normalizeRuntimeCoreArchitectureGate(options.runtimeCoreArchitectureGate);
   state.runtimePrdReadiness = normalizeRuntimePrdReadiness(options.runtimePrdReadiness);
   state.runtimePrdCompletionGate = normalizeRuntimePrdCompletionGate(options.runtimePrdCompletionGate);
+  if (options.runtimePrdCompletionPackages) mergeRuntimePrdCompletionPackages(options.runtimePrdCompletionPackages);
   state.productionEvidenceRequirements = normalizeProductionEvidenceRequirements(options.productionEvidenceRequirements);
   state.productionEvidenceTasks = normalizeProductionEvidenceTasks(options.productionEvidenceTasks);
   state.productionEvidenceHandoff = normalizeProductionEvidenceHandoff(options.productionEvidenceHandoff);
+  if (options.productionEvidenceHandoffPackages) mergeProductionEvidenceHandoffPackages(options.productionEvidenceHandoffPackages);
+  if (options.providerConformancePackages) mergeConformancePackageCatalog("provider", options.providerConformancePackages);
+  if (options.softwareConformancePackages) mergeConformancePackageCatalog("software", options.softwareConformancePackages);
+  if (options.agentConformancePackages) mergeConformancePackageCatalog("agent", options.agentConformancePackages);
+  if (options.integrationConformancePackages) mergeConformancePackageCatalog("integration", options.integrationConformancePackages);
   state.integrationReadiness = normalizeIntegrationReadiness(options.integrationReadiness);
   state.softwareActions = (snapshot.software_actions ?? []).map(runtimeSoftwareAction);
   state.runtimeDiscovery = normalizeRuntimeDiscovery(options.runtimeDiscovery);
@@ -1692,6 +1779,8 @@ function mergeRuntimeSnapshot(snapshot, url, options = {}) {
     ? options.desktopRequests.requests.map(runtimeDesktopRecognitionRequest)
     : deriveDesktopRecognitionRequestsFromSoftwareActions();
   state.runtimeHandoff = normalizeRuntimeHandoff(options.runtimeHandoff ?? deriveRuntimeHandoffFromState());
+  if (options.runtimeHandoffPackages) mergeRuntimeHandoffPackages(options.runtimeHandoffPackages);
+  if (options.runtimeCoreArchitecturePackages) mergeRuntimeCoreArchitecturePackages(options.runtimeCoreArchitecturePackages);
   if (!mergeOutputPackages(options.outputPackages)) mergeOutputManifestsFromSnapshot(snapshot);
   mergeAgentSessions(snapshot);
   state.tokenTotal = snapshot.stats?.token_total ?? state.tasks.reduce((total, task) => total + (task.cost ?? 0), 0);
@@ -2491,6 +2580,32 @@ function normalizeRuntimePrdReadiness(readiness) {
   };
 }
 
+function normalizeRuntimeCoreArchitectureReadiness(readiness) {
+  if (!readiness) return null;
+  const summary = readiness.summary ?? {};
+  const gate = readiness.architecture_gate ?? readiness.architectureGate ?? {};
+  return {
+    kind: readiness.kind ?? "pool_core_architecture_readiness",
+    overallStatus: readiness.overall_status ?? readiness.overallStatus ?? "partial",
+    projectFilter: readiness.project_filter ?? readiness.projectFilter ?? state.snapshot?.projectFilter,
+    generatedAt: readiness.generated_at ?? readiness.generatedAt,
+    summary: {
+      total: numberValue(summary.total),
+      ready: numberValue(summary.ready),
+      partial: numberValue(summary.partial),
+      blocked: numberValue(summary.blocked),
+    },
+    architectureGate: {
+      status: gate.status ?? "unknown",
+      readyForCoreArchitecture: Boolean(gate.ready_for_core_architecture ?? gate.readyForCoreArchitecture),
+      incompleteRequirements: gate.incomplete_requirements ?? gate.incompleteRequirements ?? [],
+      proofCommands: gate.proof_commands ?? gate.proofCommands ?? {},
+    },
+    requirements: (readiness.requirements ?? []).map(runtimePrdRequirement),
+    sourceResources: readiness.source_resources ?? readiness.sourceResources ?? [],
+  };
+}
+
 function normalizeRuntimePrdCompletionGate(payload) {
   if (!payload) return null;
   const summary = payload.summary ?? {};
@@ -2507,6 +2622,28 @@ function normalizeRuntimePrdCompletionGate(payload) {
     },
     status: gate.status ?? "unknown",
     readyForCompletion: Boolean(gate.ready_for_completion ?? gate.readyForCompletion),
+    incompleteRequirements: gate.incomplete_requirements ?? gate.incompleteRequirements ?? [],
+    proofCommands: gate.proof_commands ?? gate.proofCommands ?? {},
+    criteria: gate.criteria ?? [],
+  };
+}
+
+function normalizeRuntimeCoreArchitectureGate(payload) {
+  if (!payload) return null;
+  const summary = payload.summary ?? {};
+  const gate = payload.architecture_gate ?? payload.architectureGate ?? {};
+  return {
+    kind: payload.kind ?? "pool_core_architecture_gate",
+    overallStatus: payload.overall_status ?? payload.overallStatus ?? "partial",
+    projectFilter: payload.project_filter ?? payload.projectFilter ?? state.snapshot?.projectFilter,
+    summary: {
+      total: numberValue(summary.total),
+      ready: numberValue(summary.ready),
+      partial: numberValue(summary.partial),
+      blocked: numberValue(summary.blocked),
+    },
+    status: gate.status ?? "unknown",
+    readyForCoreArchitecture: Boolean(gate.ready_for_core_architecture ?? gate.readyForCoreArchitecture),
     incompleteRequirements: gate.incomplete_requirements ?? gate.incompleteRequirements ?? [],
     proofCommands: gate.proof_commands ?? gate.proofCommands ?? {},
     criteria: gate.criteria ?? [],
@@ -2532,6 +2669,108 @@ function normalizeRuntimePrdCompletionPackage(result) {
     completionStatus: report.completion_status ?? report.completionStatus ?? "unknown",
     localFiles: Array.isArray(report.local_paths)
       ? report.local_paths.length
+      : Array.isArray(report.local_files)
+        ? report.local_files.length
+      : numberValue(report.local_files ?? report.localFiles),
+    taskId: result.task?.id ?? "",
+    assetCount: Array.isArray(result.assets) ? result.assets.length : 0,
+  };
+}
+
+function mergeRuntimePrdCompletionPackages(catalog) {
+  if (!Array.isArray(catalog?.packages)) return false;
+  if (!catalog.packages.length) {
+    state.runtimePrdCompletionPackage = null;
+    return false;
+  }
+  state.runtimePrdCompletionPackage = normalizeRuntimePrdCompletionPackage({
+    kind: "pool_prd_completion_package",
+    report: catalog.packages[0],
+  });
+  return true;
+}
+
+function normalizeConformancePackageSummary(packageSummary, fallbackKind = "") {
+  if (!packageSummary) return null;
+  const localFiles = packageSummary.local_files ?? packageSummary.localFiles ?? [];
+  const packageKind = packageSummary.package_kind ?? packageSummary.packageKind ?? fallbackKind;
+  return {
+    packageId: packageSummary.package_id ?? packageSummary.packageId ?? "",
+    packageKind,
+    targetId:
+      packageSummary.target_id ??
+      packageSummary.targetId ??
+      packageSummary.provider_id ??
+      packageSummary.adapter_id ??
+      packageSummary.session_kind ??
+      "",
+    projectSlug: packageSummary.project_slug ?? packageSummary.projectSlug ?? "",
+    status: packageSummary.status ?? "missing",
+    title: packageSummary.title ?? "",
+    packageDir: packageSummary.package_dir ?? packageSummary.packageDir ?? "",
+    manifestPath: packageSummary.manifest_path ?? packageSummary.manifestPath ?? "",
+    runnerScriptPath:
+      packageSummary.runner_script_path ??
+      packageSummary.runnerScriptPath ??
+      packageSummary.paths?.runner_script ??
+      packageSummary.paths?.runnerScript ??
+      "",
+    preflightPath: packageSummary.preflight_path ?? packageSummary.preflightPath ?? "",
+    contractPath: packageSummary.contract_path ?? packageSummary.contractPath ?? "",
+    gatewayWorkerContractPath:
+      packageSummary.gateway_worker_contract_path ??
+      packageSummary.gatewayWorkerContractPath ??
+      "",
+    runbookPath: packageSummary.runbook_path ?? packageSummary.runbookPath ?? "",
+    requestPath: packageSummary.request_path ?? packageSummary.requestPath ?? "",
+    localFiles: Array.isArray(localFiles) ? localFiles.length : numberValue(localFiles),
+    localFileFailures:
+      packageSummary.local_file_failures ??
+      packageSummary.localFileFailures ??
+      [],
+    commands: packageSummary.commands ?? {},
+    nextActions: packageSummary.next_actions ?? packageSummary.nextActions ?? {},
+    summary: packageSummary.summary ?? {},
+  };
+}
+
+function mergeConformancePackageCatalog(kind, catalog) {
+  if (!Array.isArray(catalog?.packages)) return false;
+  const latest = catalog.packages.length
+    ? normalizeConformancePackageSummary(catalog.packages[0], kind)
+    : null;
+  if (kind === "provider") state.providerConformancePackage = latest;
+  if (kind === "software") state.softwareConformancePackage = latest;
+  if (kind === "agent") state.agentConformancePackage = latest;
+  if (kind === "integration") state.integrationConformancePackage = latest;
+  return Boolean(latest);
+}
+
+function normalizeRuntimeCoreArchitecturePackage(result) {
+  if (!result) return null;
+  const report = result.report ?? {};
+  return {
+    kind: result.kind ?? "pool_core_architecture_package",
+    status: report.status ?? result.status ?? "unknown",
+    packageDir: report.package_dir ?? report.packageDir ?? "",
+    readinessPath: report.readiness_path ?? report.readinessPath ?? "",
+    coreArchitectureGatePath: report.core_architecture_gate_path ?? report.coreArchitectureGatePath ?? "",
+    runtimeGraphPath: report.runtime_graph_path ?? report.runtimeGraphPath ?? "",
+    runtimeExecutionPlanPath: report.runtime_execution_plan_path ?? report.runtimeExecutionPlanPath ?? "",
+    runtimeHandoffPath: report.runtime_handoff_path ?? report.runtimeHandoffPath ?? "",
+    outputPackagesPath: report.output_packages_path ?? report.outputPackagesPath ?? "",
+    strictPrdCompletionGatePath:
+      report.strict_prd_completion_gate_path ??
+      report.strictPrdCompletionGatePath ??
+      "",
+    manifestPath: report.manifest_path ?? report.manifestPath ?? "",
+    snapshotPath: report.snapshot_path ?? report.snapshotPath ?? "",
+    readyForCoreArchitecture: Boolean(report.ready_for_core_architecture ?? report.readyForCoreArchitecture),
+    architectureStatus: report.architecture_status ?? report.architectureStatus ?? "unknown",
+    localFiles: Array.isArray(report.local_paths)
+      ? report.local_paths.length
+      : Array.isArray(report.local_files)
+        ? report.local_files.length
       : numberValue(report.local_files ?? report.localFiles),
     taskId: result.task?.id ?? "",
     assetCount: Array.isArray(result.assets) ? result.assets.length : 0,
@@ -2803,6 +3042,79 @@ function normalizeRuntimeHandoffPackage(result) {
     taskId: report.task_id ?? result?.task?.id ?? "",
     assetCount: Array.isArray(report.assets) ? report.assets.length : 0,
   };
+}
+
+function normalizeRuntimeHandoffPackageSummary(packageSummary) {
+  const localFiles = Array.isArray(packageSummary?.local_files)
+    ? packageSummary.local_files
+    : Array.isArray(packageSummary?.localFiles)
+      ? packageSummary.localFiles
+      : [];
+  const operatorChecklist = Array.isArray(packageSummary?.operator_checklist)
+    ? packageSummary.operator_checklist
+    : Array.isArray(packageSummary?.operatorChecklist)
+      ? packageSummary.operatorChecklist
+      : [];
+  return {
+    status: packageSummary?.status ?? "unknown",
+    localFiles: localFiles.length,
+    manifestPath: packageSummary?.manifest_path ?? packageSummary?.manifestPath ?? "",
+    integrationReadinessPath:
+      packageSummary?.integration_readiness_path ??
+      packageSummary?.integrationReadinessPath ??
+      "",
+    handoffPath: packageSummary?.handoff_path ?? packageSummary?.handoffPath ?? "",
+    preflightPath: packageSummary?.preflight_path ?? packageSummary?.preflightPath ?? "",
+    graphPath: packageSummary?.graph_path ?? packageSummary?.graphPath ?? "",
+    workerSelfChecksPath:
+      packageSummary?.worker_self_checks_path ??
+      packageSummary?.workerSelfChecksPath ??
+      "",
+    workerSelfChecksPreflightPath:
+      packageSummary?.worker_self_checks_preflight_path ??
+      packageSummary?.workerSelfChecksPreflightPath ??
+      "",
+    snapshotPath: packageSummary?.snapshot_path ?? packageSummary?.snapshotPath ?? "",
+    operatorChecklist: operatorChecklist.map((step) => ({
+      step: numberValue(step?.step),
+      owner: step?.owner ?? "",
+      action: step?.action ?? "",
+      command: step?.command ?? "",
+      path: step?.path ?? "",
+      verify: step?.verify ?? "",
+    })),
+    agentEntrypoint: packageSummary?.agent_entrypoint ?? packageSummary?.agentEntrypoint ?? {},
+    mcpResources: Array.isArray(packageSummary?.mcp_resources)
+      ? packageSummary.mcp_resources
+      : Array.isArray(packageSummary?.mcpResources)
+        ? packageSummary.mcpResources
+        : [],
+    taskId: "",
+    assetCount: localFiles.length,
+  };
+}
+
+function mergeRuntimeHandoffPackages(catalog) {
+  if (!Array.isArray(catalog?.packages)) return false;
+  if (!catalog.packages.length) {
+    state.runtimeHandoffPackage = null;
+    return false;
+  }
+  state.runtimeHandoffPackage = normalizeRuntimeHandoffPackageSummary(catalog.packages[0]);
+  return true;
+}
+
+function mergeRuntimeCoreArchitecturePackages(catalog) {
+  if (!Array.isArray(catalog?.packages)) return false;
+  if (!catalog.packages.length) {
+    state.runtimeCoreArchitecturePackage = null;
+    return false;
+  }
+  state.runtimeCoreArchitecturePackage = normalizeRuntimeCoreArchitecturePackage({
+    kind: "pool_core_architecture_package",
+    report: catalog.packages[0],
+  });
+  return true;
 }
 
 function normalizeRuntimeDiscovery(payload) {
@@ -3362,9 +3674,13 @@ function renderConnection(connection, index) {
     : connection.channelLabel ?? connectionChannelLabel(connection.kind);
   const labelX = Math.round((from.x + to.x) / 2);
   const labelY = Math.round((from.y + to.y) / 2 + (connection.kind === "gate" ? -14 : -10) + (index % 2) * 18);
+  const title = `${connection.from?.title ?? connection.fromId} -> ${connection.to?.title ?? connection.toId} / ${label}`;
   return `
-    <path class="line ${connection.kind}-flow" d="${path}" />
-    <text x="${labelX}" y="${labelY}">${label}</text>
+    <g class="connection-route ${connection.kind}-flow" data-channel="${escapeHtml(connection.channel ?? connection.kind)}">
+      <title>${escapeHtml(title)}</title>
+      <path class="line ${connection.kind}-flow" d="${path}" />
+      <text class="connection-label" x="${labelX}" y="${labelY}">${escapeHtml(label)}</text>
+    </g>
   `;
 }
 
@@ -3702,7 +4018,7 @@ function renderRuntimeDiscoveryPanel(discovery) {
   const toolNames = discovery.tools
     .map((tool) => tool.name)
     .filter(Boolean)
-    .slice(0, 8)
+    .slice(0, 20)
     .join(" / ");
   const command = `pool-cli --project ${project} serve-mcp`;
   return `
@@ -3974,6 +4290,7 @@ function renderIntegrationReadiness() {
       <span>Next actions</span>
       ${renderIntegrationRunPlan(readiness.runPlan)}
     </div>
+    ${renderConformancePackageCatalogs()}
     <div class="integration-readiness-columns">
       <section>
         <span>Providers</span>
@@ -3989,6 +4306,62 @@ function renderIntegrationReadiness() {
       </section>
     </div>
     <code>${escapeHtml(readiness.commands.integration_conformance_package ?? "pool-cli integration-readiness")}</code>
+  `;
+}
+
+function renderConformancePackageCatalogs() {
+  const project = activeProjectSlug();
+  const packages = [
+    {
+      label: "Provider",
+      item: state.providerConformancePackage,
+      command: `pool-cli --project ${project} provider-conformance-packages`,
+    },
+    {
+      label: "Software",
+      item: state.softwareConformancePackage,
+      command: `pool-cli --project ${project} software-conformance-packages`,
+    },
+    {
+      label: "Agent/Hermes",
+      item: state.agentConformancePackage,
+      command: `pool-cli --project ${project} agent-conformance-packages`,
+    },
+    {
+      label: "Integration",
+      item: state.integrationConformancePackage,
+      command: `pool-cli --project ${project} integration-conformance-packages`,
+    },
+  ];
+  const rows = packages
+    .map(({ label, item, command }) => {
+      if (!item) {
+        return `
+          <div class="integration-readiness-row status-partial">
+            <strong>${label} 验收包目录</strong>
+            <small>等待本地 manifest 入库后恢复最近包。</small>
+            <code>${escapeHtml(command)}</code>
+          </div>
+        `;
+      }
+      const target = item.targetId || item.projectSlug || item.packageKind || "catalog";
+      const runner = item.runnerScriptPath || item.commands?.preflight || command;
+      return `
+        <div class="integration-readiness-row status-${item.status}">
+          <strong>${label} 验收包 · ${escapeHtml(target)}</strong>
+          <small>${escapeHtml(item.manifestPath || item.packageDir || "manifest pending")} · ${item.localFiles} files</small>
+          ${item.preflightPath ? `<small>preflight · ${escapeHtml(item.preflightPath)}</small>` : ""}
+          <code>${escapeHtml(runner)}</code>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="integration-readiness-run-plan">
+      <span>Conformance catalogs</span>
+      ${rows}
+    </div>
   `;
 }
 
@@ -4581,6 +4954,10 @@ function renderPrdReadiness() {
 
   const summary = readiness.summary;
   const gate = state.runtimePrdCompletionGate ?? readiness.completionGate;
+  const coreReadiness = state.runtimeCoreArchitectureReadiness;
+  const coreGate = state.runtimeCoreArchitectureGate ?? coreReadiness?.architectureGate;
+  const coreSummary = state.runtimeCoreArchitectureGate?.summary ?? coreReadiness?.summary ?? {};
+  const corePackage = state.runtimeCoreArchitecturePackage;
   const completionPackage = state.runtimePrdCompletionPackage;
   const runtimeReady = state.snapshot?.mode === "runtime-http";
   const gateCommand =
@@ -4610,6 +4987,27 @@ function renderPrdReadiness() {
       <div><span>Blocked</span><strong>${summary.blocked}</strong></div>
       <div><span>Total</span><strong>${summary.total}</strong></div>
     </div>
+    ${
+      coreReadiness
+        ? `
+          <div class="prd-requirement status-${coreGate?.readyForCoreArchitecture ? "ready" : "partial"}">
+            <span>${coreGate?.status ?? coreReadiness.overallStatus}</span>
+            <strong>${coreGate?.readyForCoreArchitecture ? "核心架构门槛已满足" : "核心架构门槛未满足"}</strong>
+            <small>${coreGate?.readyForCoreArchitecture ? `本地运行框架 ${coreSummary.ready ?? coreReadiness.summary.ready}/${coreSummary.total ?? coreReadiness.summary.total} 项已证明；真实生产证据仍由 PRD completion gate 单独阻断。` : `${coreGate?.incompleteRequirements?.length ?? coreSummary.partial ?? coreReadiness.summary.partial} 个核心架构要求仍需补齐。`}</small>
+            <code>${escapeHtml(coreGate?.proofCommands?.core_architecture_gate ?? coreGate?.proofCommands?.core_architecture_readiness ?? "pool-cli --project demo core-architecture-gate --require-ready")}</code>
+            <div class="inline-actions compact-actions">
+              <button id="createCoreArchitecturePackage" class="mini-command" type="button" ${runtimeReady ? "" : "disabled"}>写核心架构包</button>
+            </div>
+            <code>${escapeHtml(coreGate?.proofCommands?.core_architecture_package ?? `pool-cli --project ${activeProjectSlug()} core-architecture-package --output-dir worlds/${activeProjectSlug()}/output --include-snapshot`)}</code>
+            ${
+              corePackage
+                ? `<small>最近核心包：${escapeHtml(corePackage.manifestPath || corePackage.packageDir)} · ${corePackage.localFiles} files · ${corePackage.readyForCoreArchitecture ? "ready" : "incomplete"}</small>`
+                : ""
+            }
+          </div>
+        `
+        : ""
+    }
     <div class="prd-requirement status-${gate?.readyForCompletion ? "ready" : "partial"}">
       <span>${gate?.status ?? "gate"}</span>
       <strong>${gate?.readyForCompletion ? "PRD 完成门槛已满足" : "PRD 完成门槛未满足"}</strong>
@@ -4637,6 +5035,7 @@ function renderPrdReadiness() {
       }
     </div>
   `;
+  document.querySelector("#createCoreArchitecturePackage")?.addEventListener("click", createCoreArchitecturePackage);
   document.querySelector("#createPrdCompletionPackage")?.addEventListener("click", createPrdCompletionPackage);
 }
 
@@ -5173,12 +5572,29 @@ function normalizeProductionEvidenceHandoffPackage(result) {
     bundlePath: report.bundle_path ?? "",
     tasksPath: report.tasks_path ?? "",
     itemCount: numberValue(report.item_count ?? summary.item_templates),
-    localFiles: Array.isArray(report.local_paths) ? report.local_paths.length : numberValue(summary.local_files),
+    localFiles: Array.isArray(report.local_paths)
+      ? report.local_paths.length
+      : Array.isArray(report.local_files)
+        ? report.local_files.length
+      : numberValue(report.local_files ?? summary.local_files),
     items,
     providerGatewayWorkerStartCommands,
     bridgeWorkerStartCommands,
     taskId: result?.task?.id ?? "",
   };
+}
+
+function mergeProductionEvidenceHandoffPackages(catalog) {
+  if (!Array.isArray(catalog?.packages)) return false;
+  if (!catalog.packages.length) {
+    state.productionEvidenceHandoffPackage = null;
+    return false;
+  }
+  state.productionEvidenceHandoffPackage = normalizeProductionEvidenceHandoffPackage({
+    kind: "pool_production_evidence_handoff_package",
+    report: catalog.packages[0],
+  });
+  return true;
 }
 
 function normalizeProductionEvidenceImport(result) {
@@ -5715,6 +6131,42 @@ async function createPrdCompletionPackage() {
     renderAll();
   } catch (error) {
     addEvent("warn", `PRD 完成证明包写出失败：${error.message}`);
+    renderEvents();
+  }
+}
+
+async function createCoreArchitecturePackage() {
+  if (state.snapshot?.mode !== "runtime-http") {
+    addEvent("warn", "需要先连接 Runtime HTTP 才能写出核心架构证明包。");
+    renderEvents();
+    return;
+  }
+
+  const runtime = state.snapshot.runtime ?? runtimeBaseUrl();
+  const projectSlug = activeProjectSlug();
+  try {
+    const result = await fetchJson(runtimeCoreArchitecturePackageUrl(runtime), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_slug: projectSlug,
+        node_id: "agent",
+        title: "Core architecture proof package",
+        output_dir: `worlds/${projectSlug}/output`,
+        source: "web-core-architecture-package",
+        include_snapshot: true,
+      }),
+    });
+    state.runtimeCoreArchitecturePackage = normalizeRuntimeCoreArchitecturePackage(result);
+    await mergeRuntimeMutationSnapshot(result.snapshot, runtime);
+    addEvent(
+      "ok",
+      `核心架构证明包已写出：${state.runtimeCoreArchitecturePackage.readyForCoreArchitecture ? "ready" : "incomplete"} / ${state.runtimeCoreArchitecturePackage.localFiles} files。`,
+    );
+    saveState();
+    renderAll();
+  } catch (error) {
+    addEvent("warn", `核心架构证明包写出失败：${error.message}`);
     renderEvents();
   }
 }

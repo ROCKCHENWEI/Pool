@@ -8,10 +8,13 @@ use crate::db::{
 };
 use crate::models::{ConnectionKind, NodeStatus, NodeType, WorkflowConnection, WorkflowNode};
 use crate::{
+    conformance_package_catalog_resource, core_architecture_package_catalog_resource,
     desktop_recognition_contract_resource, output_package_catalog_resource,
+    prd_completion_package_catalog_resource, production_evidence_handoff_package_catalog_resource,
     provider_contracts_resource, provider_gateway_worker_contract,
     runtime_handoff_package_catalog_resource, software_control_contracts_resource,
-    unreal_mcp_bridge_contract_resource, ProviderRegistry, SoftwareAdapterRegistry,
+    unreal_mcp_bridge_contract_resource, ConformancePackageKind, ProviderRegistry,
+    SoftwareAdapterRegistry,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,6 +84,166 @@ impl McpServer {
                 }
             }))
             .map_err(Into::into),
+            "pool://core-architecture-readiness" => serde_json::to_string_pretty(&json!({
+                "kind": "pool_core_architecture_readiness",
+                "overall_status": "requires_snapshot",
+                "summary": {"ready": 0, "partial": 1, "blocked": 0, "total": 1},
+                "architecture_gate": {
+                    "status": "incomplete",
+                    "ready_for_core_architecture": false,
+                    "core_architecture_is_proven_by_current_snapshot": false,
+                    "incomplete_requirements": [{
+                        "id": "runtime_snapshot",
+                        "status": "partial",
+                        "gaps": ["No RuntimeSnapshot is attached to this MCP server."],
+                        "next_actions": ["Use RuntimeHttpServer, pool-cli --db, or McpServer::from_snapshot."]
+                    }]
+                },
+                "requirements": [{
+                    "id": "runtime_snapshot",
+                    "title": "Runtime snapshot required",
+                    "status": "partial",
+                    "summary": "Read this resource from a snapshot-backed runtime to compute core architecture readiness.",
+                    "evidence": [],
+                    "gaps": ["No RuntimeSnapshot is attached to this MCP server."],
+                    "next_actions": ["Use RuntimeHttpServer, pool-cli --db, or McpServer::from_snapshot."]
+                }]
+            }))
+            .map_err(Into::into),
+            "pool://core-architecture-gate" => serde_json::to_string_pretty(&json!({
+                "kind": "pool_core_architecture_gate",
+                "overall_status": "requires_snapshot",
+                "summary": {"ready": 0, "partial": 1, "blocked": 0, "total": 1},
+                "architecture_gate": {
+                    "status": "incomplete",
+                    "ready_for_core_architecture": false,
+                    "core_architecture_is_proven_by_current_snapshot": false,
+                    "incomplete_requirements": [{
+                        "id": "runtime_snapshot",
+                        "status": "partial",
+                        "gaps": ["No RuntimeSnapshot is attached to this MCP server."],
+                        "next_actions": ["Use RuntimeHttpServer, pool-cli --db, or McpServer::from_snapshot."]
+                    }]
+                }
+            }))
+            .map_err(Into::into),
+            "pool://core-architecture-packages" => {
+                serde_json::to_string_pretty(&json!({
+                    "kind": "pool_core_architecture_packages",
+                    "summary": {
+                        "package_count": 0,
+                        "indexed_files": 0,
+                        "ready_packages": 0,
+                        "architecture_ready_packages": 0,
+                        "local_file_failures": [],
+                        "latest_asset_at": null
+                    },
+                    "packages": [],
+                    "policy": {
+                        "local_files_authoritative": true,
+                        "provider_urls_are_provenance": true,
+                        "expected_files": [
+                            ".1-core-architecture-package-request.json",
+                            "1-core-architecture-readiness.json",
+                            "2-core-architecture-gate.json",
+                            "3-runtime-graph.json",
+                            "4-runtime-execution-plan.json",
+                            "5-runtime-handoff.json",
+                            "6-output-packages.json",
+                            "7-strict-prd-completion-gate.json",
+                            "8-core-architecture-package-manifest.json",
+                            "9-runtime-snapshot.json"
+                        ],
+                        "production_evidence_is_out_of_scope": true
+                    }
+                }))
+                .map_err(Into::into)
+            }
+            "pool://prd-completion-packages" => {
+                serde_json::to_string_pretty(&json!({
+                    "kind": "pool_prd_completion_packages",
+                    "summary": {
+                        "package_count": 0,
+                        "indexed_files": 0,
+                        "ready_packages": 0,
+                        "completion_ready_packages": 0,
+                        "local_file_failures": [],
+                        "latest_asset_at": null
+                    },
+                    "packages": [],
+                    "policy": {
+                        "local_files_authoritative": true,
+                        "provider_urls_are_provenance": true,
+                        "expected_files": [
+                            ".1-prd-completion-package-request.json",
+                            "1-prd-readiness.json",
+                            "2-prd-completion-gate.json",
+                            "3-production-evidence-requirements.json",
+                            "4-prd-completion-package-manifest.json",
+                            "5-runtime-snapshot.json"
+                        ],
+                        "production_evidence_required_for_ready": true
+                    }
+                }))
+                .map_err(Into::into)
+            }
+            "pool://production-evidence-handoff-packages" => {
+                serde_json::to_string_pretty(&json!({
+                    "kind": "pool_production_evidence_handoff_packages",
+                    "summary": {
+                        "package_count": 0,
+                        "indexed_files": 0,
+                        "ready_packages": 0,
+                        "item_files": 0,
+                        "runner_packages": 0,
+                        "local_file_failures": [],
+                        "latest_asset_at": null
+                    },
+                    "packages": [],
+                    "policy": {
+                        "local_files_authoritative": true,
+                        "provider_urls_are_provenance": true,
+                        "expected_files": [
+                            ".1-production-evidence-handoff-package-request.json",
+                            "1-production-evidence-requirements.json",
+                            "2-production-evidence-tasks.json",
+                            "3-production-evidence-handoff.json",
+                            "4-production-evidence-run-plan.json",
+                            "5-production-evidence-bundle.json",
+                            "6-production-evidence-package-manifest.json",
+                            "7-production-evidence-runner.sh",
+                            "8-production-evidence-runner-preflight.json",
+                            "9-runtime-snapshot.json"
+                        ],
+                        "item_templates_are_scaffolds": true
+                    }
+                }))
+                .map_err(Into::into)
+            }
+            "pool://provider-conformance-packages" => {
+                serde_json::to_string_pretty(&empty_conformance_catalog_json(
+                    ConformancePackageKind::Provider,
+                ))
+                .map_err(Into::into)
+            }
+            "pool://software-conformance-packages" => {
+                serde_json::to_string_pretty(&empty_conformance_catalog_json(
+                    ConformancePackageKind::Software,
+                ))
+                .map_err(Into::into)
+            }
+            "pool://agent-conformance-packages" => {
+                serde_json::to_string_pretty(&empty_conformance_catalog_json(
+                    ConformancePackageKind::Agent,
+                ))
+                .map_err(Into::into)
+            }
+            "pool://integration-conformance-packages" => {
+                serde_json::to_string_pretty(&empty_conformance_catalog_json(
+                    ConformancePackageKind::Integration,
+                ))
+                .map_err(Into::into)
+            }
             "pool://provider-contracts" => {
                 serde_json::to_string_pretty(&provider_contracts_resource(None)?)
                     .map_err(Into::into)
@@ -226,6 +389,51 @@ fn default_resources() -> Vec<McpResource> {
             uri: "pool://integration-readiness".to_string(),
             name: "Integration Readiness".to_string(),
             description: "Snapshot-backed readiness matrix for Provider, software, and Agent/Hermes integration work".to_string(),
+        },
+        McpResource {
+            uri: "pool://core-architecture-readiness".to_string(),
+            name: "Core Architecture Readiness".to_string(),
+            description: "Snapshot-backed gate for local core architecture completion, separated from real production evidence closeout".to_string(),
+        },
+        McpResource {
+            uri: "pool://core-architecture-gate".to_string(),
+            name: "Core Architecture Gate".to_string(),
+            description: "Machine-readable hard gate for local core architecture completion; use the CLI/tool require-ready mode for CI-style failure".to_string(),
+        },
+        McpResource {
+            uri: "pool://core-architecture-packages".to_string(),
+            name: "Core Architecture Packages".to_string(),
+            description: "Snapshot-backed catalog of generated core architecture proof package files, manifest, commands, and MCP resources".to_string(),
+        },
+        McpResource {
+            uri: "pool://prd-completion-packages".to_string(),
+            name: "PRD Completion Packages".to_string(),
+            description: "Snapshot-backed catalog of generated PRD completion proof package files, manifest, commands, and readiness status".to_string(),
+        },
+        McpResource {
+            uri: "pool://production-evidence-handoff-packages".to_string(),
+            name: "Production Evidence Handoff Packages".to_string(),
+            description: "Snapshot-backed catalog of generated production evidence handoff packages, runner scripts, item files, and operator commands".to_string(),
+        },
+        McpResource {
+            uri: "pool://provider-conformance-packages".to_string(),
+            name: "Provider Conformance Packages".to_string(),
+            description: "Snapshot-backed catalog of generated Provider conformance packages, local manifests, runner scripts, and gateway worker contracts".to_string(),
+        },
+        McpResource {
+            uri: "pool://software-conformance-packages".to_string(),
+            name: "Software Conformance Packages".to_string(),
+            description: "Snapshot-backed catalog of generated software conformance packages, local manifests, runner scripts, and adapter contracts".to_string(),
+        },
+        McpResource {
+            uri: "pool://agent-conformance-packages".to_string(),
+            name: "Agent Conformance Packages".to_string(),
+            description: "Snapshot-backed catalog of generated Agent/Hermes conformance packages, local manifests, runner scripts, and session contracts".to_string(),
+        },
+        McpResource {
+            uri: "pool://integration-conformance-packages".to_string(),
+            name: "Integration Conformance Packages".to_string(),
+            description: "Snapshot-backed catalog of generated Provider + software + Agent integration conformance packages and child package manifests".to_string(),
         },
         McpResource {
             uri: "pool://provider-contracts".to_string(),
@@ -393,6 +601,41 @@ fn read_snapshot_resource(snapshot: &RuntimeSnapshot, uri: &str) -> Result<Strin
         "pool://assets" => json!({ "assets": snapshot.assets }),
         "pool://adapters" => runtime_adapter_catalog_resource(),
         "pool://integration-readiness" => runtime_integration_readiness_resource(snapshot),
+        "pool://core-architecture-readiness" => {
+            runtime_core_architecture_readiness_resource(snapshot)?
+        }
+        "pool://core-architecture-gate" => {
+            let readiness = runtime_core_architecture_readiness_resource(snapshot)?;
+            json!({
+                "kind": "pool_core_architecture_gate",
+                "overall_status": readiness.get("overall_status").cloned().unwrap_or_else(|| json!("partial")),
+                "summary": readiness.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "architecture_gate": readiness.get("architecture_gate").cloned().unwrap_or_else(|| json!({})),
+                "requirements": readiness.get("requirements").cloned().unwrap_or_else(|| json!([])),
+                "source_resources": readiness.get("source_resources").cloned().unwrap_or_else(|| json!([])),
+            })
+        }
+        "pool://core-architecture-packages" => {
+            serde_json::to_value(core_architecture_package_catalog_resource(snapshot))?
+        }
+        "pool://prd-completion-packages" => {
+            serde_json::to_value(prd_completion_package_catalog_resource(snapshot))?
+        }
+        "pool://production-evidence-handoff-packages" => serde_json::to_value(
+            production_evidence_handoff_package_catalog_resource(snapshot),
+        )?,
+        "pool://provider-conformance-packages" => serde_json::to_value(
+            conformance_package_catalog_resource(snapshot, ConformancePackageKind::Provider),
+        )?,
+        "pool://software-conformance-packages" => serde_json::to_value(
+            conformance_package_catalog_resource(snapshot, ConformancePackageKind::Software),
+        )?,
+        "pool://agent-conformance-packages" => serde_json::to_value(
+            conformance_package_catalog_resource(snapshot, ConformancePackageKind::Agent),
+        )?,
+        "pool://integration-conformance-packages" => serde_json::to_value(
+            conformance_package_catalog_resource(snapshot, ConformancePackageKind::Integration),
+        )?,
         "pool://provider-contracts" => provider_contracts_resource(None)?,
         "pool://provider-gateway-worker" => provider_gateway_worker_contract(),
         "pool://software-contracts" => software_control_contracts_resource(None)?,
@@ -608,6 +851,296 @@ pub fn runtime_integration_readiness_resource(snapshot: &RuntimeSnapshot) -> Val
             "control_priority": "API/MCP > Skills/CLI > Desktop Recognition > Human Takeover",
         }
     })
+}
+
+pub fn runtime_core_architecture_readiness_resource(snapshot: &RuntimeSnapshot) -> Result<Value> {
+    let provider_registry = ProviderRegistry::defaults();
+    let software_registry = SoftwareAdapterRegistry::defaults();
+    let provider_configs = provider_registry.configs();
+    let software_configs = software_registry.configs();
+    let provider_ids = provider_configs
+        .iter()
+        .map(|config| config.id.clone())
+        .collect::<Vec<_>>();
+    let software_ids = software_configs
+        .iter()
+        .map(|config| config.id.clone())
+        .collect::<Vec<_>>();
+    let missing_required_providers = REQUIRED_PROVIDER_EVIDENCE
+        .iter()
+        .filter(|provider_id| !provider_ids.iter().any(|id| id == **provider_id))
+        .map(|provider_id| provider_id.to_string())
+        .collect::<Vec<_>>();
+    let missing_required_software = REQUIRED_SOFTWARE_EVIDENCE
+        .iter()
+        .filter(|adapter_id| !software_ids.iter().any(|id| id == **adapter_id))
+        .map(|adapter_id| adapter_id.to_string())
+        .collect::<Vec<_>>();
+    let graph = runtime_graph_resource(snapshot)?;
+    let execution_plan = runtime_execution_plan_resource(snapshot)?;
+    let budget = runtime_budget_resource(snapshot);
+    let handoff = runtime_handoff_resource(snapshot)?;
+    let handoff_catalog = serde_json::to_value(runtime_handoff_package_catalog_resource(snapshot))?;
+    let output_catalog = output_package_catalog_resource(snapshot);
+    let provider_contracts = provider_contracts_resource(None)?;
+    let software_contracts = software_control_contracts_resource(None)?;
+    let desktop_contract = desktop_recognition_contract_resource();
+    let local_asset_count = snapshot
+        .assets
+        .iter()
+        .filter(|asset| !asset.local_path.trim().is_empty())
+        .count();
+    let output_ready = output_catalog.summary.ready_targets == output_catalog.summary.total_targets
+        && output_catalog.summary.total_targets > 0;
+    let project_slug = snapshot.project_filter.as_deref().unwrap_or("<slug>");
+
+    let requirements = vec![
+        prd_requirement(
+            "runtime_project_workflow",
+            "Project, workflow, and SQLite runtime baseline",
+            if snapshot.projects.is_empty() || snapshot.workflows.is_empty() {
+                "partial"
+            } else {
+                "ready"
+            },
+            "The ROCKCHENWEI/Pool baseline is represented as local projects, workflows, tasks, events, and snapshot stats.",
+            json!({
+                "projects": snapshot.projects.len(),
+                "workflows": snapshot.workflows.len(),
+                "tasks": snapshot.tasks.len(),
+                "events": snapshot.events.len(),
+                "stats": snapshot.stats,
+            }),
+            if snapshot.projects.is_empty() || snapshot.workflows.is_empty() {
+                vec!["No project/workflow is materialized in the current runtime snapshot."]
+            } else {
+                Vec::<&str>::new()
+            },
+            vec!["Run pool-cli --project <slug> run-workflow or persist_default_plan to materialize the runtime baseline."],
+        ),
+        prd_requirement(
+            "node_graph_execution",
+            "Executable node graph and task queue",
+            if snapshot.workflows.is_empty() || snapshot.tasks.is_empty() {
+                "partial"
+            } else {
+                "ready"
+            },
+            "Workflow graph, runtime execution plan, task statuses, approval gates, and run-next controls are derivable from the same snapshot.",
+            json!({
+                "runtime_graph_summary": graph.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "execution_plan_summary": execution_plan.get("summary").cloned().unwrap_or_else(|| json!({})),
+            }),
+            if snapshot.tasks.is_empty() {
+                vec!["No runtime tasks are recorded for the current project."]
+            } else {
+                Vec::<&str>::new()
+            },
+            vec!["Use pool-cli runtime-execution-plan and runtime-run-next to inspect or advance nodes."],
+        ),
+        prd_requirement(
+            "agent_hermes_control",
+            "Hermes, Agent CLI, MCP, and token control",
+            if snapshot.agent_sessions.is_empty() {
+                "partial"
+            } else {
+                "ready"
+            },
+            "Agent sessions, transcript paths, MCP resources, prompts, API key status, and token budget are visible to operators.",
+            json!({
+                "agent_sessions": snapshot.agent_sessions.len(),
+                "api_keys": snapshot.api_keys.len(),
+                "budget_summary": budget.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "mcp_resources": default_resources().len(),
+            }),
+            if snapshot.agent_sessions.is_empty() {
+                vec!["No Hermes or Agent CLI session has been staged or executed."]
+            } else {
+                Vec::<&str>::new()
+            },
+            vec!["Run pool-cli agent-session or run-workflow with agent mode enabled."],
+        ),
+        prd_requirement(
+            "provider_adapter_contracts",
+            "AI media and 3DGS Provider adapter contracts",
+            if missing_required_providers.is_empty() {
+                "ready"
+            } else {
+                "partial"
+            },
+            "Midjourney/image-2/Nano Banana Pro/Suno and 3DGS providers are represented through registry IDs, contracts, gateway worker, and request ledger paths.",
+            json!({
+                "registered_providers": provider_ids,
+                "required_providers": REQUIRED_PROVIDER_EVIDENCE,
+                "missing_required_providers": missing_required_providers.clone(),
+                "provider_requests": snapshot.provider_requests.len(),
+                "provider_contracts_kind": provider_contracts["kind"],
+                "gateway_worker": provider_gateway_worker_contract()["kind"],
+            }),
+            if missing_required_providers.is_empty() {
+                Vec::<String>::new()
+            } else {
+                vec![format!(
+                    "Provider registry is missing required adapters: {}.",
+                    missing_required_providers.join(", ")
+                )]
+            },
+            vec!["Use production-evidence-provider-matrix later to prove real upstream execution; core architecture only requires registered contracts."],
+        ),
+        prd_requirement(
+            "software_control_contracts",
+            "External software control contracts",
+            if missing_required_software.is_empty() {
+                "ready"
+            } else {
+                "partial"
+            },
+            "Unreal, Unity, Resolve, editing software, TouchDesigner, MadMapper, Blender, ComfyUI, motion DB, Nuke, and Hermes are modeled through SoftwareAdapterConfig and control contracts.",
+            json!({
+                "registered_software": software_ids,
+                "required_software": REQUIRED_SOFTWARE_EVIDENCE,
+                "missing_required_software": missing_required_software.clone(),
+                "software_actions": snapshot.software_actions.len(),
+                "software_contracts_kind": software_contracts["kind"],
+                "desktop_contract_kind": desktop_contract["kind"],
+                "control_priority": ["API/MCP", "Skills/CLI", "Desktop Recognition", "Human Takeover"],
+            }),
+            if missing_required_software.is_empty() {
+                Vec::<String>::new()
+            } else {
+                vec![format!(
+                    "Software registry is missing required adapters: {}.",
+                    missing_required_software.join(", ")
+                )]
+            },
+            vec!["Use production-evidence-software-matrix later to prove real software execution; core architecture only requires registered contracts."],
+        ),
+        prd_requirement(
+            "unreal_first_assembly",
+            "Unreal-first assembly path",
+            if has_software_action_for(snapshot, "unreal") {
+                "ready"
+            } else {
+                "partial"
+            },
+            "Unreal is the first deep engine target and can be driven through Unreal MCP bridge, software action ledger, or mock fallback.",
+            json!({
+                "unreal_actions": snapshot.software_actions.iter().filter(|action| action.adapter_id == "unreal").count(),
+                "unreal_bridge_kind": unreal_mcp_bridge_contract_resource()["kind"],
+            }),
+            if has_software_action_for(snapshot, "unreal") {
+                Vec::<&str>::new()
+            } else {
+                vec!["No Unreal software action is recorded in the current snapshot."]
+            },
+            vec!["Run pool-cli run-software unreal or run-workflow with unreal mode enabled."],
+        ),
+        prd_requirement(
+            "output_targets",
+            "Video, game, and interactive-art output targets",
+            if output_ready { "ready" } else { "partial" },
+            "The output package catalog can recover indexed local manifests for video timeline, game build, and interactive-art cues.",
+            json!({
+                "summary": output_catalog.summary,
+                "deliverables": output_catalog.deliverables,
+            }),
+            if output_ready {
+                Vec::<&str>::new()
+            } else {
+                vec!["One or more output deliverable manifests are missing or not locally readable."]
+            },
+            vec!["Run pool-cli output-package or run-workflow to generate all three deliverable manifests."],
+        ),
+        prd_requirement(
+            "local_first_asset_envelope",
+            "image-blaster local-first asset envelope",
+            if local_asset_count > 0 { "ready" } else { "partial" },
+            "Indexed assets use local files as the loading source of truth; provider URLs remain provenance.",
+            json!({
+                "assets": snapshot.assets.len(),
+                "local_asset_count": local_asset_count,
+                "policy": {
+                    "local_files_authoritative": true,
+                    "provider_urls_are_provenance": true,
+                    "indexed_files": true,
+                },
+            }),
+            if local_asset_count > 0 {
+                Vec::<&str>::new()
+            } else {
+                vec!["No local indexed asset is recorded in the current snapshot."]
+            },
+            vec!["Run a Provider/mock 3DGS/output package step so generated assets are indexed in SQLite."],
+        ),
+        prd_requirement(
+            "handoff_and_mcp_surface",
+            "Runtime handoff, MCP resources, and package readback",
+            "ready",
+            "The runtime exposes Agent/Hermes/operator handoff, MCP resources, and recoverable handoff package catalog.",
+            json!({
+                "handoff_summary": handoff.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "handoff_package_summary": handoff_catalog.get("summary").cloned().unwrap_or_else(|| json!({})),
+                "resources": [
+                    "pool://core-architecture-readiness",
+                    "pool://runtime-handoff",
+                    "pool://runtime-handoff-packages",
+                    "pool://prd-completion-gate"
+                ],
+            }),
+            Vec::<&str>::new(),
+            vec!["Use pool-cli runtime-handoff-packages to recover the latest local handoff package after reconnect."],
+        ),
+        prd_requirement(
+            "production_evidence_boundary",
+            "Production evidence boundary remains strict",
+            "ready",
+            "Core architecture readiness is intentionally separate from PRD production completion, which still requires real Provider/software/desktop-vision evidence.",
+            json!({
+                "strict_prd_completion_gate": "pool://prd-completion-gate",
+                "production_evidence_requirements": "pool://production-evidence-requirements",
+                "deferred_not_blocking_core_architecture": [
+                    "real upstream Provider evidence",
+                    "real external software execution evidence",
+                    "external visual model desktop trace evidence"
+                ],
+            }),
+            Vec::<&str>::new(),
+            vec!["Use pool-cli prd-completion-gate --require-complete only when closing the full production PRD."],
+        ),
+    ];
+    let summary = prd_readiness_summary(&requirements);
+    let overall_status = if summary.get("blocked").and_then(Value::as_u64).unwrap_or(0) > 0 {
+        "blocked"
+    } else if summary.get("partial").and_then(Value::as_u64).unwrap_or(0) > 0 {
+        "partial"
+    } else {
+        "ready"
+    };
+    let architecture_gate =
+        core_architecture_gate(project_slug, &requirements, &summary, overall_status);
+
+    Ok(json!({
+        "kind": "pool_core_architecture_readiness",
+        "version": 1,
+        "project_filter": snapshot.project_filter,
+        "generated_at": snapshot.generated_at,
+        "overall_status": overall_status,
+        "summary": summary,
+        "architecture_gate": architecture_gate,
+        "requirements": requirements,
+        "source_resources": [
+            "pool://runtime-graph",
+            "pool://runtime-execution-plan",
+            "pool://integration-readiness",
+            "pool://runtime-handoff",
+            "pool://runtime-handoff-packages",
+            "pool://provider-contracts",
+            "pool://software-contracts",
+            "pool://desktop-recognition-contract",
+            "pool://output-packages",
+            "pool://prd-completion-gate"
+        ],
+    }))
 }
 
 fn integration_provider_readiness(
@@ -3879,6 +4412,55 @@ fn prd_completion_gate(
     })
 }
 
+fn core_architecture_gate(
+    project_slug: &str,
+    requirements: &[Value],
+    summary: &Value,
+    overall_status: &str,
+) -> Value {
+    let incomplete_requirements = requirements
+        .iter()
+        .filter(|requirement| requirement["status"] != "ready")
+        .map(|requirement| {
+            json!({
+                "id": requirement.get("id").cloned().unwrap_or_else(|| json!("unknown")),
+                "status": requirement.get("status").cloned().unwrap_or_else(|| json!("unknown")),
+                "gaps": requirement.get("gaps").cloned().unwrap_or_else(|| json!([])),
+                "next_actions": requirement.get("next_actions").cloned().unwrap_or_else(|| json!([])),
+            })
+        })
+        .collect::<Vec<_>>();
+    let ready_for_core_architecture =
+        overall_status == "ready" && incomplete_requirements.is_empty();
+
+    json!({
+        "status": if ready_for_core_architecture { "complete" } else { "incomplete" },
+        "ready_for_core_architecture": ready_for_core_architecture,
+        "core_architecture_is_proven_by_current_snapshot": ready_for_core_architecture,
+        "summary": summary,
+        "criteria": [
+            "A local project and workflow must be materialized in the runtime snapshot.",
+            "The node graph must produce executable plan steps and runtime tasks.",
+            "Hermes/Agent control must have at least one auditable session or transcript.",
+            "Required AI media, 3DGS, and software adapters must be registered with machine-readable contracts.",
+            "Unreal-first assembly, local indexed assets, and video/game/interactive-art output manifests must be represented.",
+            "Production evidence gaps are tracked separately and must not be counted as core architecture blockers."
+        ],
+        "incomplete_requirements": incomplete_requirements,
+        "proof_commands": {
+            "core_architecture_gate": format!("pool-cli --project {project_slug} core-architecture-gate --require-ready"),
+            "core_architecture_readiness": format!("pool-cli --project {project_slug} core-architecture-readiness"),
+            "core_architecture_package": format!("pool-cli --project {project_slug} core-architecture-package --output-dir worlds/{project_slug}/output --include-snapshot"),
+            "core_architecture_packages": format!("pool-cli --project {project_slug} core-architecture-packages"),
+            "core_architecture_smoke": "cargo run -q -p pool-core --example run_prd_readiness_smoke -- target/core-architecture-readiness-smoke",
+            "runtime_workflow_probe": format!("pool-cli --project {project_slug} run-workflow --title \"Core architecture PRD probe\" --prompt \"core architecture verification\" --agent-mode stage --three-dgs-mode mock --unreal-mode mock"),
+            "runtime_handoff": format!("pool-cli --project {project_slug} runtime-handoff"),
+            "runtime_handoff_packages": format!("pool-cli --project {project_slug} runtime-handoff-packages"),
+            "strict_prd_completion_gate": format!("pool-cli --project {project_slug} prd-completion-gate --require-complete")
+        },
+    })
+}
+
 fn has_software_action_for(snapshot: &RuntimeSnapshot, adapter_id: &str) -> bool {
     snapshot
         .software_actions
@@ -6064,6 +6646,74 @@ fn count_by<'a>(values: impl Iterator<Item = &'a str>) -> BTreeMap<String, usize
     counts
 }
 
+fn empty_conformance_catalog_json(package_kind: ConformancePackageKind) -> Value {
+    let (kind, expected_files) = match package_kind {
+        ConformancePackageKind::Provider => (
+            "pool_provider_conformance_packages",
+            vec![
+                ".1-provider-conformance-package-request.json",
+                "1-provider-contract.json",
+                "2-provider-gateway-worker-contract.json",
+                "3-provider-conformance-runbook.json",
+                "4-provider-conformance-preflight.json",
+                "5-provider-conformance-runner.sh",
+                "6-provider-conformance-package-manifest.json",
+            ],
+        ),
+        ConformancePackageKind::Software => (
+            "pool_software_conformance_packages",
+            vec![
+                ".1-software-conformance-package-request.json",
+                "1-software-control-contract.json",
+                "2-software-conformance-runbook.json",
+                "3-software-conformance-preflight.json",
+                "4-software-conformance-runner.sh",
+                "5-software-conformance-package-manifest.json",
+            ],
+        ),
+        ConformancePackageKind::Agent => (
+            "pool_agent_conformance_packages",
+            vec![
+                ".1-agent-conformance-package-request.json",
+                "1-agent-session-contract.json",
+                "2-agent-conformance-runbook.json",
+                "3-agent-conformance-preflight.json",
+                "4-agent-conformance-runner.sh",
+                "5-agent-conformance-package-manifest.json",
+            ],
+        ),
+        ConformancePackageKind::Integration => (
+            "pool_integration_conformance_packages",
+            vec![
+                ".1-integration-conformance-package-request.json",
+                "1-integration-conformance-runbook.json",
+                "2-integration-conformance-runner.sh",
+                "3-integration-conformance-package-manifest.json",
+            ],
+        ),
+    };
+
+    json!({
+        "kind": kind,
+        "package_kind": package_kind,
+        "summary": {
+            "package_count": 0,
+            "indexed_files": 0,
+            "ready_packages": 0,
+            "runner_packages": 0,
+            "local_file_failures": [],
+            "latest_asset_at": null
+        },
+        "packages": [],
+        "policy": {
+            "local_files_authoritative": true,
+            "provider_urls_are_provenance": true,
+            "secrets_stay_server_side": true,
+            "expected_files": expected_files
+        }
+    })
+}
+
 impl Default for McpServer {
     fn default() -> Self {
         Self::new()
@@ -6078,8 +6728,7 @@ mod tests {
     };
     use crate::db::RuntimeRepository;
     use crate::engine::{
-        build_default_content_burst_plan, RuntimeHandoffPackageRequest,
-        RuntimeHandoffPackageRunner,
+        build_default_content_burst_plan, RuntimeHandoffPackageRequest, RuntimeHandoffPackageRunner,
     };
     use crate::models::{NodeType, RuntimeTask};
     use std::path::PathBuf;
@@ -6099,6 +6748,7 @@ mod tests {
         assert!(uris.contains(&"pool://runtime-execution-plan"));
         assert!(uris.contains(&"pool://adapters"));
         assert!(uris.contains(&"pool://integration-readiness"));
+        assert!(uris.contains(&"pool://core-architecture-readiness"));
         assert!(uris.contains(&"pool://provider-contracts"));
         assert!(uris.contains(&"pool://provider-gateway-worker"));
         assert!(uris.contains(&"pool://software-contracts"));
@@ -6137,6 +6787,17 @@ mod tests {
         assert_eq!(prd_readiness["kind"], "pool_prd_readiness");
         assert_eq!(prd_readiness["overall_status"], "partial");
         assert_eq!(prd_readiness["requirements"][0]["id"], "runtime_snapshot");
+        let core_readiness_payload = server
+            .read_resource("pool://core-architecture-readiness")
+            .unwrap();
+        let core_readiness: serde_json::Value =
+            serde_json::from_str(&core_readiness_payload).unwrap();
+        assert_eq!(core_readiness["kind"], "pool_core_architecture_readiness");
+        assert_eq!(core_readiness["overall_status"], "requires_snapshot");
+        assert_eq!(
+            core_readiness["architecture_gate"]["ready_for_core_architecture"],
+            false
+        );
         let production_requirements_payload = server
             .read_resource("pool://production-evidence-requirements")
             .unwrap();
@@ -6302,6 +6963,55 @@ mod tests {
             value["commands"]["integration_conformance_package"],
             "pool-cli --project <slug> integration-conformance-package --output-dir worlds/<slug>/output"
         );
+    }
+
+    #[test]
+    fn snapshot_server_reads_core_architecture_readiness_resource() {
+        let db_path = temp_db_path("mcp-core-architecture-readiness");
+        let repository = RuntimeRepository::open(&db_path).unwrap();
+        repository.migrate().unwrap();
+        let plan = build_default_content_burst_plan("demo", "Core architecture readiness");
+        repository.persist_plan(&plan).unwrap();
+        let snapshot = repository.snapshot(Some("demo")).unwrap();
+        let server = McpServer::from_snapshot(snapshot);
+
+        let payload = server
+            .read_resource("pool://core-architecture-readiness")
+            .unwrap();
+        let value: serde_json::Value = serde_json::from_str(&payload).unwrap();
+
+        assert_eq!(value["kind"], "pool_core_architecture_readiness");
+        assert_eq!(value["project_filter"], "demo");
+        assert_eq!(value["summary"]["total"], 10);
+        assert!(value["requirements"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(
+                |requirement| requirement["id"] == "provider_adapter_contracts"
+                    && requirement["status"] == "ready"
+            ));
+        assert!(value["requirements"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(
+                |requirement| requirement["id"] == "production_evidence_boundary"
+                    && requirement["status"] == "ready"
+            ));
+        assert_eq!(
+            value["architecture_gate"]["proof_commands"]["strict_prd_completion_gate"],
+            "pool-cli --project demo prd-completion-gate --require-complete"
+        );
+        assert_eq!(
+            value["architecture_gate"]["proof_commands"]["core_architecture_smoke"],
+            "cargo run -q -p pool-core --example run_prd_readiness_smoke -- target/core-architecture-readiness-smoke"
+        );
+        assert!(value["source_resources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|resource| resource.as_str() == Some("pool://prd-completion-gate")));
     }
 
     #[test]
@@ -6664,7 +7374,9 @@ mod tests {
         let snapshot = repository.snapshot(Some("demo")).unwrap();
         let server = McpServer::from_snapshot(snapshot);
 
-        let payload = server.read_resource("pool://runtime-handoff-packages").unwrap();
+        let payload = server
+            .read_resource("pool://runtime-handoff-packages")
+            .unwrap();
         let value: serde_json::Value = serde_json::from_str(&payload).unwrap();
 
         assert_eq!(value["kind"], "pool_runtime_handoff_packages");

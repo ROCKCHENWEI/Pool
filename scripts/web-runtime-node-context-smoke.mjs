@@ -800,6 +800,9 @@ const runtimeDiscovery = {
     mcp_resources: true,
     mcp_tools: true,
     mcp_prompts: true,
+    core_architecture_gate: true,
+    prd_completion_package_catalog: true,
+    production_evidence_handoff_package_catalog: true,
   },
   endpoints: {
     events_websocket: "/api/events/ws",
@@ -809,6 +812,11 @@ const runtimeDiscovery = {
     agent_session_stream: "/api/agent-sessions/stream?session_id=<agent-session-id>",
     provider_gateway_worker: "/api/provider-gateway-worker",
     integration_readiness: "/api/integration-readiness",
+    core_architecture_readiness: "/api/core-architecture-readiness",
+    core_architecture_gate: "/api/core-architecture-gate",
+    core_architecture_packages: "/api/core-architecture-packages",
+    prd_completion_packages: "/api/prd-completion-packages",
+    production_evidence_handoff_packages: "/api/production-evidence/handoff-packages",
     provider_conformance_packages: "/api/provider-conformance-packages",
     integration_conformance_packages: "/api/integration-conformance-packages",
     software_conformance_packages: "/api/software-conformance-packages",
@@ -819,12 +827,32 @@ const runtimeDiscovery = {
   mcp_resources: [
     { uri: "pool://runtime-execution-plan", http_path: "/api/mcp?uri=pool%3A%2F%2Fruntime-execution-plan" },
     { uri: "pool://integration-readiness", http_path: "/api/mcp?uri=pool%3A%2F%2Fintegration-readiness" },
+    { uri: "pool://core-architecture-readiness", http_path: "/api/mcp?uri=pool%3A%2F%2Fcore-architecture-readiness" },
+    { uri: "pool://core-architecture-gate", http_path: "/api/mcp?uri=pool%3A%2F%2Fcore-architecture-gate" },
+    { uri: "pool://core-architecture-packages", http_path: "/api/mcp?uri=pool%3A%2F%2Fcore-architecture-packages" },
+    { uri: "pool://prd-completion-packages", http_path: "/api/mcp?uri=pool%3A%2F%2Fprd-completion-packages" },
+    { uri: "pool://production-evidence-handoff-packages", http_path: "/api/mcp?uri=pool%3A%2F%2Fproduction-evidence-handoff-packages" },
+    { uri: "pool://provider-conformance-packages", http_path: "/api/mcp?uri=pool%3A%2F%2Fprovider-conformance-packages" },
+    { uri: "pool://software-conformance-packages", http_path: "/api/mcp?uri=pool%3A%2F%2Fsoftware-conformance-packages" },
+    { uri: "pool://agent-conformance-packages", http_path: "/api/mcp?uri=pool%3A%2F%2Fagent-conformance-packages" },
+    { uri: "pool://integration-conformance-packages", http_path: "/api/mcp?uri=pool%3A%2F%2Fintegration-conformance-packages" },
     { uri: "pool://provider-gateway-worker", http_path: "/api/mcp?uri=pool%3A%2F%2Fprovider-gateway-worker" },
     { uri: "pool://agent-sessions", http_path: "/api/mcp?uri=pool%3A%2F%2Fagent-sessions" },
   ],
   mcp_tools: [
     { name: "pool_provider_gateway_worker", category: "read", transport: "mcp_stdio" },
     { name: "pool_integration_readiness", category: "read", transport: "mcp_stdio" },
+    { name: "pool_core_architecture_readiness", category: "read", transport: "mcp_stdio" },
+    { name: "pool_core_architecture_gate", category: "read", transport: "mcp_stdio" },
+    { name: "pool_core_architecture_packages", category: "read", transport: "mcp_stdio" },
+    { name: "pool_prd_completion_packages", category: "read", transport: "mcp_stdio" },
+    { name: "pool_prd_completion_package", category: "write", transport: "mcp_stdio" },
+    { name: "pool_production_evidence_handoff_packages", category: "read", transport: "mcp_stdio" },
+    { name: "pool_production_evidence_handoff_package", category: "write", transport: "mcp_stdio" },
+    { name: "pool_provider_conformance_packages", category: "read", transport: "mcp_stdio" },
+    { name: "pool_software_conformance_packages", category: "read", transport: "mcp_stdio" },
+    { name: "pool_agent_conformance_packages", category: "read", transport: "mcp_stdio" },
+    { name: "pool_integration_conformance_packages", category: "read", transport: "mcp_stdio" },
     { name: "pool_worker_self_checks", category: "local_smoke", transport: "mcp_stdio" },
     { name: "pool_handoff_package", category: "write", transport: "mcp_stdio" },
     { name: "pool_provider_conformance_package", category: "write", transport: "mcp_stdio" },
@@ -1325,6 +1353,61 @@ const prdReadiness = {
   source_resources: ["pool://runtime-graph", "pool://prd-readiness"],
 };
 
+const coreArchitectureReadiness = {
+  kind: "pool_core_architecture_readiness",
+  version: 1,
+  project_filter: "demo",
+  generated_at: "2026-06-11T00:00:00Z",
+  overall_status: "ready",
+  summary: {
+    total: 10,
+    ready: 10,
+    partial: 0,
+    blocked: 0,
+  },
+  architecture_gate: {
+    status: "complete",
+    ready_for_core_architecture: true,
+    incomplete_requirements: [],
+    proof_commands: {
+      core_architecture_gate: "pool-cli --project demo core-architecture-gate --require-ready",
+      core_architecture_readiness: "pool-cli --project demo core-architecture-readiness",
+      core_architecture_package: "pool-cli --project demo core-architecture-package --output-dir worlds/demo/output --include-snapshot",
+      core_architecture_packages: "pool-cli --project demo core-architecture-packages",
+      strict_prd_completion_gate: "pool-cli --project demo prd-completion-gate --require-complete",
+    },
+  },
+  requirements: [
+    {
+      id: "runtime_project_workflow",
+      title: "Project, workflow, and SQLite runtime baseline",
+      status: "ready",
+      summary: "Runtime baseline is represented.",
+      gaps: [],
+      next_actions: [],
+    },
+    {
+      id: "production_evidence_boundary",
+      title: "Production evidence boundary remains strict",
+      status: "ready",
+      summary: "Strict PRD completion gate remains separate.",
+      gaps: [],
+      next_actions: [],
+    },
+  ],
+  source_resources: ["pool://core-architecture-readiness", "pool://prd-completion-gate"],
+};
+
+const coreArchitectureGate = {
+  kind: "pool_core_architecture_gate",
+  project_filter: "demo",
+  overall_status: "ready",
+  summary: coreArchitectureReadiness.summary,
+  architecture_gate: coreArchitectureReadiness.architecture_gate,
+  requirements: coreArchitectureReadiness.requirements,
+  source_resources: ["pool://core-architecture-gate", "pool://core-architecture-readiness"],
+};
+
 const prdCompletionGate = {
   kind: "pool_prd_completion_gate",
   project_filter: "demo",
@@ -1338,6 +1421,100 @@ const prdCompletionGate = {
     },
   },
 };
+
+const prdCompletionPackageLocalPaths = [
+  "worlds/demo/output/control/prd-completion/.1-prd-completion-package-request.json",
+  "worlds/demo/output/control/prd-completion/1-prd-readiness.json",
+  "worlds/demo/output/control/prd-completion/2-prd-completion-gate.json",
+  "worlds/demo/output/control/prd-completion/3-production-evidence-requirements.json",
+  "worlds/demo/output/control/prd-completion/4-prd-completion-package-manifest.json",
+  "worlds/demo/output/control/prd-completion/5-runtime-snapshot.json",
+];
+
+function prdCompletionPackageReport() {
+  return {
+    status: "Succeeded",
+    package_dir: "worlds/demo/output/control/prd-completion",
+    readiness_path: "worlds/demo/output/control/prd-completion/1-prd-readiness.json",
+    completion_gate_path: "worlds/demo/output/control/prd-completion/2-prd-completion-gate.json",
+    production_evidence_requirements_path:
+      "worlds/demo/output/control/prd-completion/3-production-evidence-requirements.json",
+    manifest_path: "worlds/demo/output/control/prd-completion/4-prd-completion-package-manifest.json",
+    snapshot_path: "worlds/demo/output/control/prd-completion/5-runtime-snapshot.json",
+    ready_for_completion: false,
+    completion_status: "incomplete",
+    local_paths: prdCompletionPackageLocalPaths,
+  };
+}
+
+function prdCompletionPackageCatalogResponse() {
+  const report = prdCompletionPackageReport();
+  return {
+    kind: "pool_prd_completion_packages",
+    project_filter: "demo",
+    generated_at: "2026-06-11T00:00:00Z",
+    summary: {
+      package_count: 1,
+      indexed_files: report.local_paths.length,
+      ready_packages: 1,
+      completion_ready_packages: 0,
+      local_file_failures: [],
+      latest_asset_at: "2026-06-11T00:00:00Z",
+    },
+    packages: [
+      {
+        package_id: `prd-completion-package:${report.manifest_path}`,
+        project_slug: "demo",
+        package_dir: report.package_dir,
+        status: "ready",
+        ready_for_completion: report.ready_for_completion,
+        completion_status: report.completion_status,
+        local_files: report.local_paths,
+        local_file_failures: [],
+        request_path: "worlds/demo/output/control/prd-completion/.1-prd-completion-package-request.json",
+        readiness_path: report.readiness_path,
+        completion_gate_path: report.completion_gate_path,
+        production_evidence_requirements_path: report.production_evidence_requirements_path,
+        manifest_path: report.manifest_path,
+        snapshot_path: report.snapshot_path,
+        manifest_found: true,
+        summary: {
+          ready: 7,
+          partial: 3,
+          blocked: 0,
+          missing_total: 21,
+        },
+        commands: {
+          completion_package:
+            "pool-cli --project demo prd-completion-package --output-dir worlds/demo/output --include-snapshot",
+          completion_gate: "pool-cli --project demo prd-completion-gate --require-complete",
+          production_evidence:
+            "pool-cli --project demo closeout-production-evidence --import worlds/demo/output/production-evidence/combined-production-evidence-bundle.json",
+        },
+        operator_checklist: [
+          "Open 4-prd-completion-package-manifest.json",
+          "Resolve production evidence gaps before final PRD completion",
+          "Run prd-completion-gate --require-complete after evidence import",
+        ],
+        source_node_ids: ["agent"],
+        latest_asset_at: "2026-06-11T00:00:00Z",
+      },
+    ],
+    policy: {
+      expected_files: [
+        ".1-prd-completion-package-request.json",
+        "1-prd-readiness.json",
+        "2-prd-completion-gate.json",
+        "3-production-evidence-requirements.json",
+        "4-prd-completion-package-manifest.json",
+        "5-runtime-snapshot.json",
+      ],
+      local_files_authoritative: true,
+      provider_urls_are_provenance: true,
+      production_evidence_required_for_ready: true,
+    },
+  };
+}
 
 const productionEvidenceRequirements = {
   kind: "pool_production_evidence_requirements",
@@ -1827,6 +2004,153 @@ function productionEvidenceItemTemplateResponse(taskId) {
   };
 }
 
+function productionEvidenceHandoffPackageReport() {
+  return {
+    status: "Succeeded",
+    project_slug: "demo",
+    node_id: "agent",
+    title: "Production evidence handoff package",
+    package_dir: "worlds/demo/output/control/production-evidence",
+    manifest_path: "worlds/demo/output/control/production-evidence/6-production-evidence-package-manifest.json",
+    run_plan_path: "worlds/demo/output/control/production-evidence/4-production-evidence-run-plan.json",
+    runner_script_path: "worlds/demo/output/control/production-evidence/7-production-evidence-runner.sh",
+    runner_preflight_path: "worlds/demo/output/control/production-evidence/8-production-evidence-runner-preflight.json",
+    bundle_path: "worlds/demo/output/control/production-evidence/5-production-evidence-bundle.json",
+    tasks_path: "worlds/demo/output/control/production-evidence/2-production-evidence-tasks.json",
+    item_count: 21,
+    provider_gateway_worker_start_commands: [
+      {
+        family: "3dgs",
+        endpoint_env: "POOL_3DGS_GATEWAY_ENDPOINT",
+        endpoint_assignment: "POOL_3DGS_GATEWAY_ENDPOINT=http://127.0.0.1:<port>",
+        upstream_env: "POOL_3DGS_GATEWAY_UPSTREAM_ENDPOINT",
+        cli: "pool-cli provider-gateway-worker --bind 127.0.0.1:<port> --upstream $POOL_3DGS_GATEWAY_UPSTREAM_ENDPOINT --api-key-env POOL_3DGS_GATEWAY_API_KEY",
+        production_rule: "The worker is production-valid only when --upstream routes to a real 3DGS vendor worker.",
+      },
+    ],
+    software_bridge_worker_start_commands: [
+      {
+        adapter_id: "resolve",
+        endpoint_env: "POOL_RESOLVE_ENDPOINT",
+        endpoint_assignment: "POOL_RESOLVE_ENDPOINT=http://127.0.0.1:<port>",
+        upstream_env: "POOL_RESOLVE_UPSTREAM_ENDPOINT",
+        cli: "pool-cli software-api-bridge-worker resolve --bind 127.0.0.1:<port> --output-root worlds/demo/output/production-evidence --upstream $POOL_RESOLVE_UPSTREAM_ENDPOINT",
+        production_rule: "The bridge worker is production-valid only when --upstream points to a real software plugin, API, MCP service, or gateway.",
+      },
+    ],
+    items: [
+      {
+        task_id: "provider:midjourney:production_upstream",
+        kind: "provider",
+        target_id: "midjourney",
+        bundle_path: "providers[]",
+        item_path: "worlds/demo/output/control/production-evidence/items/1-provider-midjourney-item.json",
+      },
+      {
+        task_id: "software:resolve:production_software",
+        kind: "software_action",
+        target_id: "resolve",
+        bundle_path: "software_actions[]",
+        preferred_control_profile: "api_mcp",
+        item_path: "worlds/demo/output/control/production-evidence/items/8-software_action-resolve-item.json",
+        bridge_worker: {
+          available: true,
+          endpoint_env: "POOL_RESOLVE_ENDPOINT",
+          cli_template:
+            "pool-cli software-api-bridge-worker resolve --bind 127.0.0.1:<port> --output-root worlds/demo/output --upstream <real-plugin-or-gateway-url>",
+        },
+      },
+    ],
+    local_paths: [
+      "worlds/demo/output/control/production-evidence/.1-production-evidence-handoff-package-request.json",
+      "worlds/demo/output/control/production-evidence/1-production-evidence-requirements.json",
+      "worlds/demo/output/control/production-evidence/2-production-evidence-tasks.json",
+      "worlds/demo/output/control/production-evidence/3-production-evidence-handoff.json",
+      "worlds/demo/output/control/production-evidence/4-production-evidence-run-plan.json",
+      "worlds/demo/output/control/production-evidence/5-production-evidence-bundle.json",
+      "worlds/demo/output/control/production-evidence/6-production-evidence-package-manifest.json",
+      "worlds/demo/output/control/production-evidence/7-production-evidence-runner.sh",
+      "worlds/demo/output/control/production-evidence/8-production-evidence-runner-preflight.json",
+    ],
+  };
+}
+
+function productionEvidenceHandoffPackageCatalogResponse() {
+  const report = productionEvidenceHandoffPackageReport();
+  return {
+    kind: "pool_production_evidence_handoff_packages",
+    project_filter: "demo",
+    generated_at: "2026-06-11T00:00:00Z",
+    summary: {
+      package_count: 1,
+      indexed_files: report.local_paths.length,
+      ready_packages: 1,
+      item_files: report.item_count,
+      runner_packages: 1,
+      local_file_failures: [],
+      latest_asset_at: "2026-06-11T00:00:00Z",
+    },
+    packages: [
+      {
+        package_id: `production-evidence-handoff-package:${report.manifest_path}`,
+        project_slug: "demo",
+        package_dir: report.package_dir,
+        status: "ready",
+        local_files: report.local_paths,
+        local_file_failures: [],
+        request_path:
+          "worlds/demo/output/control/production-evidence/.1-production-evidence-handoff-package-request.json",
+        requirements_path: "worlds/demo/output/control/production-evidence/1-production-evidence-requirements.json",
+        tasks_path: report.tasks_path,
+        handoff_path: "worlds/demo/output/control/production-evidence/3-production-evidence-handoff.json",
+        run_plan_path: report.run_plan_path,
+        bundle_path: report.bundle_path,
+        manifest_path: report.manifest_path,
+        runner_script_path: report.runner_script_path,
+        runner_preflight_path: report.runner_preflight_path,
+        snapshot_path: "worlds/demo/output/control/production-evidence/9-runtime-snapshot.json",
+        manifest_found: true,
+        item_count: report.item_count,
+        item_file_count: report.item_count,
+        missing_total: report.item_count,
+        output_root: "worlds/demo/output/production-evidence",
+        summary: {
+          local_files: report.local_paths.length,
+          item_templates: report.item_count,
+          missing_total: report.item_count,
+        },
+        commands: {
+          runner_preflight: "worlds/demo/output/control/production-evidence/7-production-evidence-runner.sh --preflight",
+          validate_bundle:
+            "pool-cli --project demo validate-production-evidence worlds/demo/output/control/production-evidence/5-production-evidence-bundle.json",
+        },
+        operator_checklist: ["Run 7-production-evidence-runner.sh --preflight"],
+        provider_gateway_worker_start_commands: report.provider_gateway_worker_start_commands,
+        software_bridge_worker_start_commands: report.software_bridge_worker_start_commands,
+        source_node_ids: ["agent"],
+        latest_asset_at: "2026-06-11T00:00:00Z",
+      },
+    ],
+    policy: {
+      local_files_authoritative: true,
+      provider_urls_are_provenance: true,
+      expected_files: [
+        ".1-production-evidence-handoff-package-request.json",
+        "1-production-evidence-requirements.json",
+        "2-production-evidence-tasks.json",
+        "3-production-evidence-handoff.json",
+        "4-production-evidence-run-plan.json",
+        "5-production-evidence-bundle.json",
+        "6-production-evidence-package-manifest.json",
+        "7-production-evidence-runner.sh",
+        "8-production-evidence-runner-preflight.json",
+        "9-runtime-snapshot.json",
+      ],
+      item_templates_are_scaffolds: true,
+    },
+  };
+}
+
 function payloadForUrl(rawUrl, options = {}) {
   const url = new URL(rawUrl);
   if (url.pathname === "/api/health") return { status: "ready", project_filter: "demo", stats: runtimeSnapshotPayload().stats };
@@ -1852,9 +2176,105 @@ function payloadForUrl(rawUrl, options = {}) {
   if (url.pathname === "/api/api-keys") return runtimeApiKeys;
   if (url.pathname === "/api/runtime-preflight") return runtimePreflight;
   if (url.pathname === "/api/runtime-handoff") return runtimeHandoff;
+  if (url.pathname === "/api/core-architecture-readiness") return coreArchitectureReadiness;
+  if (url.pathname === "/api/core-architecture-gate") return coreArchitectureGate;
+  if (url.pathname === "/api/core-architecture-packages") {
+    return {
+      kind: "pool_core_architecture_packages",
+      project_filter: "demo",
+      summary: {
+        package_count: 1,
+        indexed_files: 9,
+        ready_packages: 1,
+        architecture_ready_packages: 1,
+        local_file_failures: [],
+      },
+      packages: [
+        {
+          status: "ready",
+          ready_for_core_architecture: true,
+          architecture_status: "complete",
+          package_dir: "worlds/demo/output/control/core-architecture",
+          manifest_path: "worlds/demo/output/control/core-architecture/8-core-architecture-package-manifest.json",
+          readiness_path: "worlds/demo/output/control/core-architecture/1-core-architecture-readiness.json",
+          core_architecture_gate_path: "worlds/demo/output/control/core-architecture/2-core-architecture-gate.json",
+          runtime_graph_path: "worlds/demo/output/control/core-architecture/3-runtime-graph.json",
+          runtime_execution_plan_path: "worlds/demo/output/control/core-architecture/4-runtime-execution-plan.json",
+          runtime_handoff_path: "worlds/demo/output/control/core-architecture/5-runtime-handoff.json",
+          output_packages_path: "worlds/demo/output/control/core-architecture/6-output-packages.json",
+          strict_prd_completion_gate_path: "worlds/demo/output/control/core-architecture/7-strict-prd-completion-gate.json",
+          snapshot_path: "worlds/demo/output/control/core-architecture/9-runtime-snapshot.json",
+          local_files: [
+            "worlds/demo/output/control/core-architecture/.1-core-architecture-package-request.json",
+            "worlds/demo/output/control/core-architecture/1-core-architecture-readiness.json",
+            "worlds/demo/output/control/core-architecture/2-core-architecture-gate.json",
+            "worlds/demo/output/control/core-architecture/3-runtime-graph.json",
+            "worlds/demo/output/control/core-architecture/4-runtime-execution-plan.json",
+            "worlds/demo/output/control/core-architecture/5-runtime-handoff.json",
+            "worlds/demo/output/control/core-architecture/6-output-packages.json",
+            "worlds/demo/output/control/core-architecture/7-strict-prd-completion-gate.json",
+            "worlds/demo/output/control/core-architecture/8-core-architecture-package-manifest.json",
+            "worlds/demo/output/control/core-architecture/9-runtime-snapshot.json",
+          ],
+        },
+      ],
+    };
+  }
   if (url.pathname === "/api/prd-readiness") return prdReadiness;
   if (url.pathname === "/api/prd-completion-gate") return prdCompletionGate;
+  if (url.pathname === "/api/prd-completion-packages") return prdCompletionPackageCatalogResponse();
   if (url.pathname === "/api/integration-readiness") return integrationReadiness;
+  if (url.pathname === "/api/core-architecture-package") {
+    const body = JSON.parse(options.body ?? "{}");
+    if (
+      body.project_slug !== "demo" ||
+      body.node_id !== "agent" ||
+      body.output_dir !== "worlds/demo/output" ||
+      body.source !== "web-core-architecture-package" ||
+      body.include_snapshot !== true
+    ) {
+      throw new Error(`unexpected core architecture package body: ${options.body}`);
+    }
+    return {
+      kind: "pool_core_architecture_package",
+      report: {
+        status: "complete",
+        ready_for_core_architecture: true,
+        architecture_status: "complete",
+        package_dir: "worlds/demo/output/control/core-architecture",
+        readiness_path: "worlds/demo/output/control/core-architecture/1-core-architecture-readiness.json",
+        core_architecture_gate_path: "worlds/demo/output/control/core-architecture/2-core-architecture-gate.json",
+        runtime_graph_path: "worlds/demo/output/control/core-architecture/3-runtime-graph.json",
+        runtime_execution_plan_path: "worlds/demo/output/control/core-architecture/4-runtime-execution-plan.json",
+        runtime_handoff_path: "worlds/demo/output/control/core-architecture/5-runtime-handoff.json",
+        output_packages_path: "worlds/demo/output/control/core-architecture/6-output-packages.json",
+        strict_prd_completion_gate_path: "worlds/demo/output/control/core-architecture/7-strict-prd-completion-gate.json",
+        manifest_path: "worlds/demo/output/control/core-architecture/8-core-architecture-package-manifest.json",
+        snapshot_path: "worlds/demo/output/control/core-architecture/9-runtime-snapshot.json",
+        local_paths: [
+          "worlds/demo/output/control/core-architecture/.1-core-architecture-package-request.json",
+          "worlds/demo/output/control/core-architecture/1-core-architecture-readiness.json",
+          "worlds/demo/output/control/core-architecture/2-core-architecture-gate.json",
+          "worlds/demo/output/control/core-architecture/3-runtime-graph.json",
+          "worlds/demo/output/control/core-architecture/4-runtime-execution-plan.json",
+          "worlds/demo/output/control/core-architecture/5-runtime-handoff.json",
+          "worlds/demo/output/control/core-architecture/6-output-packages.json",
+          "worlds/demo/output/control/core-architecture/7-strict-prd-completion-gate.json",
+          "worlds/demo/output/control/core-architecture/8-core-architecture-package-manifest.json",
+          "worlds/demo/output/control/core-architecture/9-runtime-snapshot.json",
+        ],
+      },
+      task: {
+        id: "task-core-architecture-package",
+        status: "Succeeded",
+      },
+      assets: [
+        { id: "asset-core-architecture-readiness" },
+        { id: "asset-core-architecture-manifest" },
+      ],
+      snapshot,
+    };
+  }
   if (url.pathname === "/api/prd-completion-package") {
     const body = JSON.parse(options.body ?? "{}");
     if (
@@ -1868,25 +2288,7 @@ function payloadForUrl(rawUrl, options = {}) {
     }
     return {
       kind: "pool_prd_completion_package",
-      report: {
-        status: "Succeeded",
-        package_dir: "worlds/demo/output/control/prd-completion",
-        readiness_path: "worlds/demo/output/control/prd-completion/1-prd-readiness.json",
-        completion_gate_path: "worlds/demo/output/control/prd-completion/2-prd-completion-gate.json",
-        production_evidence_requirements_path: "worlds/demo/output/control/prd-completion/3-production-evidence-requirements.json",
-        manifest_path: "worlds/demo/output/control/prd-completion/4-prd-completion-package-manifest.json",
-        snapshot_path: "worlds/demo/output/control/prd-completion/5-runtime-snapshot.json",
-        ready_for_completion: false,
-        completion_status: "incomplete",
-        local_paths: [
-          "worlds/demo/output/control/prd-completion/.1-prd-completion-package-request.json",
-          "worlds/demo/output/control/prd-completion/1-prd-readiness.json",
-          "worlds/demo/output/control/prd-completion/2-prd-completion-gate.json",
-          "worlds/demo/output/control/prd-completion/3-production-evidence-requirements.json",
-          "worlds/demo/output/control/prd-completion/5-runtime-snapshot.json",
-          "worlds/demo/output/control/prd-completion/4-prd-completion-package-manifest.json",
-        ],
-      },
+      report: prdCompletionPackageReport(),
       task: {
         id: "task-prd-completion-package",
         status: "Succeeded",
@@ -2004,6 +2406,9 @@ function payloadForUrl(rawUrl, options = {}) {
     };
   }
   if (url.pathname === "/api/production-evidence/handoff-packages") {
+    if ((options.method ?? "GET").toUpperCase() === "GET") {
+      return productionEvidenceHandoffPackageCatalogResponse();
+    }
     const body = JSON.parse(options.body ?? "{}");
     if (
       body.project_slug !== "demo" ||
@@ -2016,75 +2421,10 @@ function payloadForUrl(rawUrl, options = {}) {
     ) {
       throw new Error(`unexpected production evidence handoff package body: ${options.body}`);
     }
+    const report = productionEvidenceHandoffPackageReport();
     return {
       kind: "pool_production_evidence_handoff_package",
-      report: {
-        status: "Succeeded",
-        project_slug: "demo",
-        node_id: "agent",
-        title: "Production evidence handoff package",
-        package_dir: "worlds/demo/output/control/production-evidence",
-        manifest_path: "worlds/demo/output/control/production-evidence/6-production-evidence-package-manifest.json",
-        run_plan_path: "worlds/demo/output/control/production-evidence/4-production-evidence-run-plan.json",
-        runner_script_path: "worlds/demo/output/control/production-evidence/7-production-evidence-runner.sh",
-        runner_preflight_path: "worlds/demo/output/control/production-evidence/8-production-evidence-runner-preflight.json",
-        bundle_path: "worlds/demo/output/control/production-evidence/5-production-evidence-bundle.json",
-        tasks_path: "worlds/demo/output/control/production-evidence/2-production-evidence-tasks.json",
-        item_count: 21,
-        provider_gateway_worker_start_commands: [
-          {
-            family: "3dgs",
-            endpoint_env: "POOL_3DGS_GATEWAY_ENDPOINT",
-            endpoint_assignment: "POOL_3DGS_GATEWAY_ENDPOINT=http://127.0.0.1:<port>",
-            upstream_env: "POOL_3DGS_GATEWAY_UPSTREAM_ENDPOINT",
-            cli: "pool-cli provider-gateway-worker --bind 127.0.0.1:<port> --upstream $POOL_3DGS_GATEWAY_UPSTREAM_ENDPOINT --api-key-env POOL_3DGS_GATEWAY_API_KEY",
-            production_rule: "The worker is production-valid only when --upstream routes to a real 3DGS vendor worker.",
-          },
-        ],
-        software_bridge_worker_start_commands: [
-          {
-            adapter_id: "resolve",
-            endpoint_env: "POOL_RESOLVE_ENDPOINT",
-            endpoint_assignment: "POOL_RESOLVE_ENDPOINT=http://127.0.0.1:<port>",
-            upstream_env: "POOL_RESOLVE_UPSTREAM_ENDPOINT",
-            cli: "pool-cli software-api-bridge-worker resolve --bind 127.0.0.1:<port> --output-root worlds/demo/output/production-evidence --upstream $POOL_RESOLVE_UPSTREAM_ENDPOINT",
-            production_rule: "The bridge worker is production-valid only when --upstream points to a real software plugin, API, MCP service, or gateway.",
-          },
-        ],
-        items: [
-          {
-            task_id: "provider:midjourney:production_upstream",
-            kind: "provider",
-            target_id: "midjourney",
-            bundle_path: "providers[]",
-            item_path: "worlds/demo/output/control/production-evidence/items/1-provider-midjourney-item.json",
-          },
-          {
-            task_id: "software:resolve:production_software",
-            kind: "software_action",
-            target_id: "resolve",
-            bundle_path: "software_actions[]",
-            preferred_control_profile: "api_mcp",
-            item_path: "worlds/demo/output/control/production-evidence/items/8-software_action-resolve-item.json",
-            bridge_worker: {
-              available: true,
-              endpoint_env: "POOL_RESOLVE_ENDPOINT",
-              cli_template: "pool-cli software-api-bridge-worker resolve --bind 127.0.0.1:<port> --output-root worlds/demo/output --upstream <real-plugin-or-gateway-url>",
-            },
-          },
-        ],
-        local_paths: [
-          "worlds/demo/output/control/production-evidence/.1-production-evidence-handoff-package-request.json",
-          "worlds/demo/output/control/production-evidence/1-production-evidence-requirements.json",
-          "worlds/demo/output/control/production-evidence/2-production-evidence-tasks.json",
-          "worlds/demo/output/control/production-evidence/3-production-evidence-handoff.json",
-          "worlds/demo/output/control/production-evidence/4-production-evidence-run-plan.json",
-          "worlds/demo/output/control/production-evidence/5-production-evidence-bundle.json",
-          "worlds/demo/output/control/production-evidence/6-production-evidence-package-manifest.json",
-          "worlds/demo/output/control/production-evidence/7-production-evidence-runner.sh",
-          "worlds/demo/output/control/production-evidence/8-production-evidence-runner-preflight.json",
-        ],
-      },
+      report,
       task: {
         id: "task-production-evidence-handoff-package",
         project_slug: "demo",
@@ -2682,6 +3022,36 @@ function payloadForUrl(rawUrl, options = {}) {
   }
   if (url.pathname === "/api/output-packages") return outputPackages;
   if (url.pathname === "/api/software-conformance-packages") {
+    if ((options.method ?? "GET").toUpperCase() === "GET") {
+      return {
+        kind: "pool_software_conformance_packages",
+        package_kind: "software",
+        summary: { package_count: 1, indexed_files: 6, ready_packages: 1, runner_packages: 1 },
+        packages: [{
+          package_id: "software:resolve",
+          package_kind: "software",
+          target_id: "resolve",
+          project_slug: "demo",
+          status: "ready",
+          package_dir: "worlds/demo/output/control/software-conformance/resolve",
+          manifest_path: "worlds/demo/output/control/software-conformance/resolve/5-software-conformance-package-manifest.json",
+          runner_script_path: "worlds/demo/output/control/software-conformance/resolve/4-software-conformance-runner.sh",
+          preflight_path: "worlds/demo/output/control/software-conformance/resolve/3-software-conformance-preflight.json",
+          contract_path: "worlds/demo/output/control/software-conformance/resolve/1-software-control-contract.json",
+          local_files: [
+            "worlds/demo/output/control/software-conformance/resolve/.1-software-conformance-package-request.json",
+            "worlds/demo/output/control/software-conformance/resolve/1-software-control-contract.json",
+            "worlds/demo/output/control/software-conformance/resolve/2-software-conformance-runbook.json",
+            "worlds/demo/output/control/software-conformance/resolve/3-software-conformance-preflight.json",
+            "worlds/demo/output/control/software-conformance/resolve/4-software-conformance-runner.sh",
+            "worlds/demo/output/control/software-conformance/resolve/5-software-conformance-package-manifest.json",
+          ],
+          commands: {
+            preflight: "worlds/demo/output/control/software-conformance/resolve/4-software-conformance-runner.sh --preflight",
+          },
+        }],
+      };
+    }
     const body = options.body ? JSON.parse(options.body) : {};
     return {
       report: {
@@ -2705,6 +3075,38 @@ function payloadForUrl(rawUrl, options = {}) {
     };
   }
   if (url.pathname === "/api/provider-conformance-packages") {
+    if ((options.method ?? "GET").toUpperCase() === "GET") {
+      return {
+        kind: "pool_provider_conformance_packages",
+        package_kind: "provider",
+        summary: { package_count: 1, indexed_files: 7, ready_packages: 1, runner_packages: 1 },
+        packages: [{
+          package_id: "provider:worldlabs-marble",
+          package_kind: "provider",
+          target_id: "worldlabs-marble",
+          project_slug: "demo",
+          status: "ready",
+          package_dir: "worlds/demo/output/control/provider-conformance/worldlabs-marble",
+          manifest_path: "worlds/demo/output/control/provider-conformance/worldlabs-marble/6-provider-conformance-package-manifest.json",
+          runner_script_path: "worlds/demo/output/control/provider-conformance/worldlabs-marble/5-provider-conformance-runner.sh",
+          preflight_path: "worlds/demo/output/control/provider-conformance/worldlabs-marble/4-provider-conformance-preflight.json",
+          contract_path: "worlds/demo/output/control/provider-conformance/worldlabs-marble/1-provider-contract.json",
+          gateway_worker_contract_path: "worlds/demo/output/control/provider-conformance/worldlabs-marble/2-provider-gateway-worker-contract.json",
+          local_files: [
+            "worlds/demo/output/control/provider-conformance/worldlabs-marble/.1-provider-conformance-package-request.json",
+            "worlds/demo/output/control/provider-conformance/worldlabs-marble/1-provider-contract.json",
+            "worlds/demo/output/control/provider-conformance/worldlabs-marble/2-provider-gateway-worker-contract.json",
+            "worlds/demo/output/control/provider-conformance/worldlabs-marble/3-provider-conformance-runbook.json",
+            "worlds/demo/output/control/provider-conformance/worldlabs-marble/4-provider-conformance-preflight.json",
+            "worlds/demo/output/control/provider-conformance/worldlabs-marble/5-provider-conformance-runner.sh",
+            "worlds/demo/output/control/provider-conformance/worldlabs-marble/6-provider-conformance-package-manifest.json",
+          ],
+          commands: {
+            preflight: "worlds/demo/output/control/provider-conformance/worldlabs-marble/5-provider-conformance-runner.sh --preflight",
+          },
+        }],
+      };
+    }
     const body = options.body ? JSON.parse(options.body) : {};
     return {
       report: {
@@ -2728,6 +3130,33 @@ function payloadForUrl(rawUrl, options = {}) {
     };
   }
   if (url.pathname === "/api/integration-conformance-packages") {
+    if ((options.method ?? "GET").toUpperCase() === "GET") {
+      return {
+        kind: "pool_integration_conformance_packages",
+        package_kind: "integration",
+        summary: { package_count: 1, indexed_files: 139, ready_packages: 1, runner_packages: 1 },
+        packages: [{
+          package_id: "integration:demo",
+          package_kind: "integration",
+          target_id: "demo",
+          project_slug: "demo",
+          status: "ready",
+          package_dir: "worlds/demo/output/control/integration-conformance",
+          manifest_path: "worlds/demo/output/control/integration-conformance/3-integration-conformance-package-manifest.json",
+          runner_script_path: "worlds/demo/output/control/integration-conformance/2-integration-conformance-runner.sh",
+          runbook_path: "worlds/demo/output/control/integration-conformance/1-integration-conformance-runbook.json",
+          local_files: [
+            "worlds/demo/output/control/integration-conformance/.1-integration-conformance-package-request.json",
+            "worlds/demo/output/control/integration-conformance/1-integration-conformance-runbook.json",
+            "worlds/demo/output/control/integration-conformance/2-integration-conformance-runner.sh",
+            "worlds/demo/output/control/integration-conformance/3-integration-conformance-package-manifest.json",
+          ],
+          commands: {
+            preflight: "worlds/demo/output/control/integration-conformance/2-integration-conformance-runner.sh --preflight",
+          },
+        }],
+      };
+    }
     const body = options.body ? JSON.parse(options.body) : {};
     return {
       report: {
@@ -2756,6 +3185,36 @@ function payloadForUrl(rawUrl, options = {}) {
     };
   }
   if (url.pathname === "/api/agent-conformance-packages") {
+    if ((options.method ?? "GET").toUpperCase() === "GET") {
+      return {
+        kind: "pool_agent_conformance_packages",
+        package_kind: "agent",
+        summary: { package_count: 1, indexed_files: 6, ready_packages: 1, runner_packages: 1 },
+        packages: [{
+          package_id: "agent:all",
+          package_kind: "agent",
+          target_id: "all",
+          project_slug: "demo",
+          status: "ready",
+          package_dir: "worlds/demo/output/control/agent-conformance/all",
+          manifest_path: "worlds/demo/output/control/agent-conformance/all/5-agent-conformance-package-manifest.json",
+          runner_script_path: "worlds/demo/output/control/agent-conformance/all/4-agent-conformance-runner.sh",
+          preflight_path: "worlds/demo/output/control/agent-conformance/all/3-agent-conformance-preflight.json",
+          contract_path: "worlds/demo/output/control/agent-conformance/all/1-agent-session-contract.json",
+          local_files: [
+            "worlds/demo/output/control/agent-conformance/all/.1-agent-conformance-package-request.json",
+            "worlds/demo/output/control/agent-conformance/all/1-agent-session-contract.json",
+            "worlds/demo/output/control/agent-conformance/all/2-agent-conformance-runbook.json",
+            "worlds/demo/output/control/agent-conformance/all/3-agent-conformance-preflight.json",
+            "worlds/demo/output/control/agent-conformance/all/4-agent-conformance-runner.sh",
+            "worlds/demo/output/control/agent-conformance/all/5-agent-conformance-package-manifest.json",
+          ],
+          commands: {
+            preflight: "worlds/demo/output/control/agent-conformance/all/4-agent-conformance-runner.sh --preflight",
+          },
+        }],
+      };
+    }
     const body = options.body ? JSON.parse(options.body) : {};
     return {
       report: {
@@ -2920,8 +3379,7 @@ function payloadForUrl(rawUrl, options = {}) {
     };
   }
   if (url.pathname === "/api/handoff-packages") {
-    return {
-      report: {
+    const report = {
         task_id: "task-handoff-package",
         status: "Succeeded",
         local_paths: [
@@ -3001,7 +3459,48 @@ function payloadForUrl(rawUrl, options = {}) {
             created_at: "2026-06-11T00:00:00Z",
           },
         ],
-      },
+    };
+    if ((options.method ?? "GET").toUpperCase() === "GET") {
+      return {
+        kind: "pool_runtime_handoff_packages",
+        project_filter: "demo",
+        generated_at: "2026-06-11T00:00:00Z",
+        summary: {
+          package_count: 1,
+          indexed_files: report.local_paths.length,
+          ready_packages: 1,
+          local_file_failures: [],
+          latest_asset_at: "2026-06-11T00:00:00Z",
+        },
+        packages: [
+          {
+            package_id: `runtime-handoff-package:${report.manifest_path}`,
+            project_slug: "demo",
+            handoff_dir: "worlds/demo/output/control/handoff",
+            status: "ready",
+            local_files: report.local_paths,
+            local_file_failures: [],
+            request_path: report.request_path,
+            handoff_path: report.handoff_path,
+            preflight_path: report.preflight_path,
+            graph_path: report.graph_path,
+            worker_self_checks_path: report.worker_self_checks_path,
+            worker_self_checks_preflight_path: report.worker_self_checks_preflight_path,
+            integration_readiness_path: report.integration_readiness_path,
+            manifest_path: report.manifest_path,
+            snapshot_path: report.snapshot_path,
+            manifest_found: true,
+            operator_checklist: report.operator_checklist,
+            agent_entrypoint: report.agent_entrypoint,
+            mcp_resources: report.mcp_resources,
+            source_node_ids: ["agent"],
+            latest_asset_at: "2026-06-11T00:00:00Z",
+          },
+        ],
+      };
+    }
+    return {
+      report,
       task: {
         id: "task-handoff-package",
         project_slug: "demo",
@@ -3143,6 +3642,7 @@ const result = vm.runInContext(
     selectedNodeContextId: state.selectedNodeContext?.node_id,
     workflowContextStatus: state.workflowContextStatus,
     workflowContextId: state.workflowContext?.workflow_id,
+    graphHtml: document.querySelector(".connections").innerHTML,
     runbookStatus: state.hermes.runbookStatus,
     runbookCount: state.hermes.runbooks.length,
     hermesPrompt: document.querySelector("#hermesPrompt").value,
@@ -3174,6 +3674,18 @@ const result = vm.runInContext(
 );
 
 const parsed = JSON.parse(result);
+await vm.runInContext('createCoreArchitecturePackage()', context);
+await new Promise((resolve) => setTimeout(resolve, 20));
+const coreArchitecturePackageResult = JSON.parse(
+  vm.runInContext(
+    `JSON.stringify({
+      prdSummary: document.querySelector("#prdReadinessSummary").textContent,
+      prdHtml: document.querySelector("#prdReadinessPanel").innerHTML,
+      eventHtmlAfterCoreArchitecturePackage: document.querySelector("#eventStream").innerHTML
+    })`,
+    context,
+  ),
+);
 await vm.runInContext('createPrdCompletionPackage()', context);
 await new Promise((resolve) => setTimeout(resolve, 20));
 const prdCompletionPackageResult = JSON.parse(
@@ -3384,6 +3896,8 @@ const runtimeApiKeyCalls = fetchCalls.filter((url) => url.includes("/api/api-key
 const runtimePreflightCalls = fetchCalls.filter((url) => url.includes("/api/runtime-preflight"));
 const runtimeExecutionPlanCalls = fetchCalls.filter((url) => url.includes("/api/runtime-execution-plan"));
 const runtimeHandoffCalls = fetchCalls.filter((url) => url.includes("/api/runtime-handoff"));
+const coreArchitectureReadinessCalls = fetchCalls.filter((url) => url.includes("/api/core-architecture-readiness"));
+const coreArchitectureGateCalls = fetchCalls.filter((url) => url.includes("/api/core-architecture-gate"));
 const prdReadinessCalls = fetchCalls.filter((url) => url.includes("/api/prd-readiness"));
 const prdCompletionGateCalls = fetchCalls.filter((url) => url.includes("/api/prd-completion-gate"));
 const productionEvidenceRequirementsCalls = fetchCalls.filter((url) => url.includes("/api/production-evidence/requirements"));
@@ -3405,10 +3919,27 @@ const promptCalls = fetchCalls.filter((url) => url.includes("/api/prompts"));
 const transcriptCalls = fetchCalls.filter((url) => url.includes("/api/agent-sessions/transcript"));
 const agentSessionRequests = fetchRequests.filter((request) => request.url.includes("/api/agent-sessions"));
 const handoffPackageRequests = fetchRequests.filter((request) => request.url.includes("/api/handoff-packages"));
+const handoffPackageCatalogRequests = handoffPackageRequests.filter(
+  (request) => (request.options.method ?? "GET").toUpperCase() === "GET",
+);
+const handoffPackagePostRequests = handoffPackageRequests.filter(
+  (request) => (request.options.method ?? "GET").toUpperCase() === "POST",
+);
 const runtimeRunNextRequests = fetchRequests.filter((request) => request.url.includes("/api/runtime-execution-plan/run-next"));
 const desktopRunNextRequests = fetchRequests.filter((request) => request.url.includes("/api/desktop-recognition/run-next"));
 const outputPackageResultRequests = fetchRequests.filter((request) => request.url.includes("/api/output-packages/results"));
-const prdCompletionPackageRequests = fetchRequests.filter((request) => request.url.includes("/api/prd-completion-package"));
+const coreArchitecturePackageCatalogRequests = fetchRequests.filter(
+  (request) => new URL(request.url).pathname === "/api/core-architecture-packages",
+);
+const coreArchitecturePackageRequests = fetchRequests.filter(
+  (request) => new URL(request.url).pathname === "/api/core-architecture-package",
+);
+const prdCompletionPackageCatalogRequests = fetchRequests.filter(
+  (request) => new URL(request.url).pathname === "/api/prd-completion-packages",
+);
+const prdCompletionPackageRequests = fetchRequests.filter(
+  (request) => new URL(request.url).pathname === "/api/prd-completion-package",
+);
 const productionEvidenceValidationRequests = fetchRequests.filter((request) => request.url.includes("/api/production-evidence/validate"));
 const productionEvidenceMergeRequests = fetchRequests.filter((request) => request.url.includes("/api/production-evidence/merge"));
 const productionEvidenceCloseoutRequests = fetchRequests.filter((request) => request.url.includes("/api/production-evidence/closeout"));
@@ -3418,7 +3949,16 @@ const productionEvidenceTaskClaimRequests = fetchRequests.filter((request) => re
 const productionEvidenceItemValidationRequests = fetchRequests.filter((request) => request.url.includes("/api/production-evidence/items/validate"));
 const productionEvidenceRunPlanRequests = fetchRequests.filter((request) => request.url.includes("/api/production-evidence/run-plan"));
 const productionEvidenceLedgerBundleRequests = fetchRequests.filter((request) => request.url.includes("/api/production-evidence/bundle-from-ledger"));
-const productionEvidenceHandoffPackageRequests = fetchRequests.filter((request) => request.url.includes("/api/production-evidence/handoff-packages"));
+const productionEvidenceHandoffPackageRequests = fetchRequests.filter((request) => {
+  const url = new URL(request.url);
+  return url.pathname === "/api/production-evidence/handoff-packages";
+});
+const productionEvidenceHandoffPackageCatalogRequests = productionEvidenceHandoffPackageRequests.filter(
+  (request) => (request.options.method ?? "GET").toUpperCase() === "GET",
+);
+const productionEvidenceHandoffPackagePostRequests = productionEvidenceHandoffPackageRequests.filter(
+  (request) => (request.options.method ?? "GET").toUpperCase() === "POST",
+);
 const productionEvidenceItemRequests = fetchRequests.filter((request) => {
   const url = new URL(request.url);
   return url.pathname === "/api/production-evidence/items";
@@ -3514,8 +4054,19 @@ if (!appSource.includes("runtimeOutputPackagesUrl") || !appSource.includes("merg
   throw new Error(`${appPath} is missing the runtime output package catalog handler`);
 }
 if (
+  !appSource.includes("runtimeProviderConformancePackagesUrl") ||
+  !appSource.includes("runtimeSoftwareConformancePackagesUrl") ||
+  !appSource.includes("runtimeAgentConformancePackagesUrl") ||
+  !appSource.includes("runtimeIntegrationConformancePackagesUrl") ||
+  !appSource.includes("mergeConformancePackageCatalog") ||
+  !appSource.includes("renderConformancePackageCatalogs")
+) {
+  throw new Error(`${appPath} is missing the conformance package catalog loader`);
+}
+if (
   !appSource.includes("runtimeProductionEvidenceTemplateUrl") ||
   !appSource.includes("runtimeProductionEvidenceTasksUrl") ||
+  !appSource.includes("runtimeProductionEvidenceHandoffPackagesUrl") ||
   !appSource.includes("runtimeProductionEvidenceHandoffPackageUrl") ||
   !appSource.includes("runtimeProductionEvidenceRunPlanUrl") ||
   !appSource.includes("runtimeProductionEvidenceItemTemplateUrl") ||
@@ -3563,6 +4114,14 @@ if (parsed.selectedNodeContextId !== "three") {
 if (parsed.workflowContextStatus !== "loaded") {
   throw new Error(`expected loaded workflow context, got ${parsed.workflowContextStatus}`);
 }
+if (
+  !parsed.graphHtml.includes("connection-route asset-flow") ||
+  !parsed.graphHtml.includes('data-channel="asset"') ||
+  !parsed.graphHtml.includes("generated plates · 资产流") ||
+  !parsed.graphHtml.includes("起始输入 -&gt; 2D/3DGS 转换 / generated plates · 资产流")
+) {
+  throw new Error(`expected runtime graph connection labels, got ${parsed.graphHtml}`);
+}
 if (parsed.workflowContextId !== "workflow-demo") {
   throw new Error(`expected workflow context for workflow-demo, got ${parsed.workflowContextId}`);
 }
@@ -3593,11 +4152,20 @@ if (!runtimeExecutionPlanCalls.some((url) => url.includes("project=demo"))) {
 if (!runtimeHandoffCalls.some((url) => url.includes("project=demo"))) {
   throw new Error(`missing /api/runtime-handoff fetch: ${fetchCalls.join(", ")}`);
 }
+if (!coreArchitectureReadinessCalls.some((url) => url.includes("project=demo"))) {
+  throw new Error(`missing /api/core-architecture-readiness fetch: ${fetchCalls.join(", ")}`);
+}
+if (!coreArchitectureGateCalls.some((url) => url.includes("project=demo"))) {
+  throw new Error(`missing /api/core-architecture-gate fetch: ${fetchCalls.join(", ")}`);
+}
 if (!prdReadinessCalls.some((url) => url.includes("project=demo"))) {
   throw new Error(`missing /api/prd-readiness fetch: ${fetchCalls.join(", ")}`);
 }
 if (!prdCompletionGateCalls.some((url) => url.includes("project=demo"))) {
   throw new Error(`missing /api/prd-completion-gate fetch: ${fetchCalls.join(", ")}`);
+}
+if (!prdCompletionPackageCatalogRequests.some((request) => request.url.includes("project=demo"))) {
+  throw new Error(`missing /api/prd-completion-packages catalog fetch: ${fetchCalls.join(", ")}`);
 }
 if (!productionEvidenceRequirementsCalls.some((url) => url.includes("project=demo"))) {
   throw new Error(`missing /api/production-evidence/requirements fetch: ${fetchCalls.join(", ")}`);
@@ -3625,6 +4193,8 @@ if (
   !parsed.productionEvidenceHtml.includes("POOL_RESOLVE_ENDPOINT=http://127.0.0.1:<port>") ||
   !parsed.productionEvidenceHtml.includes("POOL_RESOLVE_UPSTREAM_ENDPOINT") ||
   !parsed.productionEvidenceHtml.includes("software-api-bridge-worker resolve") ||
+  !parsed.productionEvidenceHtml.includes("6-production-evidence-package-manifest.json") ||
+  !parsed.productionEvidenceHtml.includes("7-production-evidence-runner.sh") ||
   !parsed.productionEvidenceHtml.includes("desktop_vision[]") ||
   !parsed.productionEvidenceHtml.includes("merge-production-evidence")
 ) {
@@ -3650,7 +4220,16 @@ if (
   !parsed.integrationReadinessHtml.includes("执行 Provider smoke") ||
   !parsed.integrationReadinessHtml.includes("配置 Provider Key") ||
   !parsed.integrationReadinessHtml.includes("spatial_engine") ||
-  !parsed.integrationReadinessHtml.includes("integration-conformance-package")
+  !parsed.integrationReadinessHtml.includes("integration-conformance-package") ||
+  !parsed.integrationReadinessHtml.includes("Conformance catalogs") ||
+  !parsed.integrationReadinessHtml.includes("Provider 验收包 · worldlabs-marble") ||
+  !parsed.integrationReadinessHtml.includes("Software 验收包 · resolve") ||
+  !parsed.integrationReadinessHtml.includes("Agent/Hermes 验收包 · all") ||
+  !parsed.integrationReadinessHtml.includes("Integration 验收包 · demo") ||
+  !parsed.integrationReadinessHtml.includes("6-provider-conformance-package-manifest.json") ||
+  !parsed.integrationReadinessHtml.includes("5-software-conformance-package-manifest.json") ||
+  !parsed.integrationReadinessHtml.includes("5-agent-conformance-package-manifest.json") ||
+  !parsed.integrationReadinessHtml.includes("3-integration-conformance-package-manifest.json")
 ) {
   throw new Error(`integration readiness panel did not render, got ${parsed.integrationReadinessSummary} / ${parsed.integrationReadinessHtml}`);
 }
@@ -3688,15 +4267,25 @@ if (
   !parsed.runtimeDiscoveryHtml.includes("/api/runtime-execution-plan") ||
   !parsed.runtimeDiscoveryHtml.includes("/api/events/ws") ||
   !parsed.runtimeDiscoveryHtml.includes("/api/agent-sessions/ws") ||
-  !parsed.runtimeDiscoveryHtml.includes("4 MCP resources") ||
-  !parsed.runtimeDiscoveryHtml.includes("9 MCP tools") ||
+  !parsed.runtimeDiscoveryHtml.includes("13 MCP resources") ||
+  !parsed.runtimeDiscoveryHtml.includes("20 MCP tools") ||
   !parsed.runtimeDiscoveryHtml.includes("pool_integration_readiness") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_core_architecture_readiness") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_core_architecture_gate") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_core_architecture_packages") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_prd_completion_packages") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_prd_completion_package") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_production_evidence_handoff_packages") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_production_evidence_handoff_package") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_provider_conformance_packages") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_software_conformance_packages") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_agent_conformance_packages") ||
+  !parsed.runtimeDiscoveryHtml.includes("pool_integration_conformance_packages") ||
   !parsed.runtimeDiscoveryHtml.includes("pool_worker_self_checks") ||
   !parsed.runtimeDiscoveryHtml.includes("pool_handoff_package") ||
   !parsed.runtimeDiscoveryHtml.includes("pool_provider_conformance_package") ||
   !parsed.runtimeDiscoveryHtml.includes("pool_integration_conformance_package") ||
   !parsed.runtimeDiscoveryHtml.includes("pool_software_conformance_package") ||
-  !parsed.runtimeDiscoveryHtml.includes("pool_agent_conformance_package") ||
   !parsed.runtimeDiscoveryHtml.includes("pool-cli --project demo serve-mcp")
 ) {
   throw new Error(`expected runtime discovery summary, got ${parsed.runtimeDiscoveryHtml}`);
@@ -3762,18 +4351,48 @@ if (!transcriptCalls.some((url) => url.includes("session_id=agent-session-cli"))
 if (!webSocketUrls.some((url) => url.startsWith("ws://runtime.test/api/agent-sessions/ws") && url.includes("session_id=agent-session-cli"))) {
   throw new Error(`expected agent session WebSocket stream: ${webSocketUrls.join(", ")}`);
 }
-if (!handoffPackageRequests.length) {
-  throw new Error("expected /api/handoff-packages request");
+if (!handoffPackageCatalogRequests.length) {
+  throw new Error("expected GET /api/handoff-packages catalog request");
 }
-const handoffPackageBody = JSON.parse(handoffPackageRequests[0].options.body);
+if (!handoffPackagePostRequests.length) {
+  throw new Error("expected POST /api/handoff-packages request");
+}
+const handoffPackageBody = JSON.parse(handoffPackagePostRequests[0].options.body);
 if (handoffPackageBody.project_slug !== "demo" || handoffPackageBody.node_id !== "agent") {
-  throw new Error(`unexpected handoff package request body: ${handoffPackageRequests[0].options.body}`);
+  throw new Error(`unexpected handoff package request body: ${handoffPackagePostRequests[0].options.body}`);
 }
 if (handoffPackageBody.output_dir !== "worlds/demo/output" || handoffPackageBody.include_snapshot !== true) {
-  throw new Error(`handoff package request did not ask for local snapshot: ${handoffPackageRequests[0].options.body}`);
+  throw new Error(`handoff package request did not ask for local snapshot: ${handoffPackagePostRequests[0].options.body}`);
+}
+if (!coreArchitecturePackageRequests.length) {
+  throw new Error("expected /api/core-architecture-package request");
+}
+if (!coreArchitecturePackageCatalogRequests.length) {
+  throw new Error("expected /api/core-architecture-packages catalog request");
+}
+const coreArchitecturePackageBody = JSON.parse(coreArchitecturePackageRequests[0].options.body);
+if (
+  coreArchitecturePackageBody.project_slug !== "demo" ||
+  coreArchitecturePackageBody.node_id !== "agent" ||
+  coreArchitecturePackageBody.output_dir !== "worlds/demo/output" ||
+  coreArchitecturePackageBody.include_snapshot !== true
+) {
+  throw new Error(`unexpected core architecture package request body: ${coreArchitecturePackageRequests[0].options.body}`);
+}
+if (
+  coreArchitecturePackageResult.prdSummary !== "partial" ||
+  !coreArchitecturePackageResult.prdHtml.includes("8-core-architecture-package-manifest.json") ||
+  !coreArchitecturePackageResult.prdHtml.includes("10 files") ||
+  !coreArchitecturePackageResult.prdHtml.includes("ready") ||
+  !coreArchitecturePackageResult.eventHtmlAfterCoreArchitecturePackage.includes("核心架构证明包已写出")
+) {
+  throw new Error(`expected core architecture package UI, got ${JSON.stringify(coreArchitecturePackageResult)}`);
 }
 if (!prdCompletionPackageRequests.length) {
   throw new Error("expected /api/prd-completion-package request");
+}
+if (!prdCompletionPackageCatalogRequests.length) {
+  throw new Error("expected /api/prd-completion-packages catalog request");
 }
 const prdCompletionPackageBody = JSON.parse(prdCompletionPackageRequests[0].options.body);
 if (
@@ -3825,7 +4444,13 @@ if (!productionEvidenceValidationRequests.length) {
 if (!productionEvidenceHandoffPackageRequests.length) {
   throw new Error("expected /api/production-evidence/handoff-packages request");
 }
-const productionEvidenceHandoffPackageBody = JSON.parse(productionEvidenceHandoffPackageRequests[0].options.body);
+if (!productionEvidenceHandoffPackageCatalogRequests.some((request) => request.url.includes("project=demo"))) {
+  throw new Error(`missing /api/production-evidence/handoff-packages catalog fetch: ${fetchCalls.join(", ")}`);
+}
+if (!productionEvidenceHandoffPackagePostRequests.length) {
+  throw new Error("expected POST /api/production-evidence/handoff-packages request");
+}
+const productionEvidenceHandoffPackageBody = JSON.parse(productionEvidenceHandoffPackagePostRequests[0].options.body);
 if (
   productionEvidenceHandoffPackageBody.project_slug !== "demo" ||
   productionEvidenceHandoffPackageBody.node_id !== "agent" ||
@@ -3834,7 +4459,7 @@ if (
   productionEvidenceHandoffPackageBody.include_items !== true ||
   productionEvidenceHandoffPackageBody.include_snapshot !== true
 ) {
-  throw new Error(`unexpected production evidence handoff package request body: ${productionEvidenceHandoffPackageRequests[0].options.body}`);
+  throw new Error(`unexpected production evidence handoff package request body: ${productionEvidenceHandoffPackagePostRequests[0].options.body}`);
 }
 if (
   productionEvidenceHandoffPackageResult.productionEvidenceSummary !== "21 package" ||
@@ -3844,12 +4469,13 @@ if (
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("7-production-evidence-runner.sh") ||
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("8-production-evidence-runner-preflight.json") ||
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("5-production-evidence-bundle.json") ||
-  !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("bridge item") ||
+  !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("bridge worker") ||
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("provider start") ||
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("POOL_3DGS_GATEWAY_UPSTREAM_ENDPOINT") ||
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("provider-gateway-worker") ||
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("bridge start") ||
-  !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("software:resolve:production_software") ||
+  !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("software_production") ||
+  !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("resolve") ||
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("POOL_RESOLVE_ENDPOINT") ||
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("POOL_RESOLVE_UPSTREAM_ENDPOINT") ||
   !productionEvidenceHandoffPackageResult.productionEvidenceHtml.includes("software-api-bridge-worker resolve") ||
@@ -4206,9 +4832,14 @@ if (
 if (
   parsed.prdSummary !== "partial" ||
   !parsed.prdHtml.includes("AI image/video/audio") ||
+  !parsed.prdHtml.includes("核心架构门槛已满足") ||
+  !parsed.prdHtml.includes("core-architecture-gate --require-ready") ||
   !parsed.prdHtml.includes("PRD 完成门槛未满足") ||
   !parsed.prdHtml.includes("closeout-production-evidence") ||
   !parsed.prdHtml.includes("gate-merged.json") ||
+  !parsed.prdHtml.includes("最近证明包") ||
+  !parsed.prdHtml.includes("4-prd-completion-package-manifest.json") ||
+  !parsed.prdHtml.includes("6 files") ||
   !parsed.prdHtml.includes("7") ||
   !parsed.prdHtml.includes("3") ||
   !parsed.prdHtml.includes("provider-gateway-worker")
@@ -4251,4 +4882,4 @@ if (!parsed.nodeLog.includes('data-node-control-run="three"') || !parsed.nodeLog
   throw new Error("node detail did not render executable runtime control actions");
 }
 
-console.log(`web runtime node-context smoke passed (${workflowContextCalls.length} workflow-context calls, ${nodeContextCalls.length} node-context calls, ${runtimeBudgetCalls.length} runtime-budget calls, ${runtimeApiKeyCalls.length} api-key audit calls, ${runtimePreflightCalls.length} runtime-preflight calls, ${runtimeExecutionPlanCalls.length} runtime-execution-plan calls, ${runtimeHandoffCalls.length} runtime-handoff calls, ${prdReadinessCalls.length} prd-readiness calls, ${prdCompletionGateCalls.length} prd-completion-gate calls, ${prdCompletionPackageRequests.length} prd-completion-package calls, ${productionEvidenceTaskCalls.length} production-evidence task calls, ${productionEvidenceHandoffCalls.length} production-evidence handoff calls, ${productionEvidenceHandoffPackageRequests.length} production-evidence handoff-package calls, ${productionEvidenceRunPlanRequests.length} production-evidence run-plan calls, ${outputPackageCalls.length} output-package calls, ${outputPackageResultRequests.length} output-result calls, ${productionEvidenceItemTemplateRequests.length} production-evidence item-template calls, ${productionEvidenceItemRequests.length} production-evidence item calls, ${productionEvidenceTemplateRequests.length} production-evidence template calls, ${productionEvidenceLedgerBundleRequests.length} production-evidence ledger-bundle calls, ${productionEvidenceMergeRequests.length} production-evidence merge calls, ${productionEvidenceCloseoutRequests.length} production-evidence closeout calls, ${productionEvidenceValidationRequests.length} production-evidence validate calls, ${productionEvidenceRequests.length} production-evidence import calls, ${runtimeDiscoveryCalls.length} discovery calls, ${adapterCalls.length} adapter calls, ${providerContractCalls.length} provider-contract calls, ${providerGatewayWorkerCalls.length} provider-gateway-worker calls, ${softwareContractCalls.length} software-contract calls, ${desktopContractCalls.length} desktop-contract calls, ${handoffPackageRequests.length} handoff-package calls, ${runtimeRunNextRequests.length} runtime-run-next calls, ${desktopRunNextRequests.length} desktop-run-next calls, ${promptCalls.length} prompts calls, ${transcriptCalls.length} transcript calls, ${webSocketUrls.length} websocket streams, ${eventSourceUrls.length} event streams)`);
+console.log(`web runtime node-context smoke passed (${workflowContextCalls.length} workflow-context calls, ${nodeContextCalls.length} node-context calls, ${runtimeBudgetCalls.length} runtime-budget calls, ${runtimeApiKeyCalls.length} api-key audit calls, ${runtimePreflightCalls.length} runtime-preflight calls, ${runtimeExecutionPlanCalls.length} runtime-execution-plan calls, ${runtimeHandoffCalls.length} runtime-handoff calls, ${coreArchitectureReadinessCalls.length} core-architecture-readiness calls, ${coreArchitectureGateCalls.length} core-architecture-gate calls, ${coreArchitecturePackageCatalogRequests.length} core-architecture-package catalog calls, ${coreArchitecturePackageRequests.length} core-architecture-package calls, ${prdReadinessCalls.length} prd-readiness calls, ${prdCompletionGateCalls.length} prd-completion-gate calls, ${prdCompletionPackageCatalogRequests.length} prd-completion-package catalog calls, ${prdCompletionPackageRequests.length} prd-completion-package calls, ${productionEvidenceTaskCalls.length} production-evidence task calls, ${productionEvidenceHandoffCalls.length} production-evidence handoff calls, ${productionEvidenceHandoffPackageCatalogRequests.length} production-evidence handoff-package catalog calls, ${productionEvidenceHandoffPackagePostRequests.length} production-evidence handoff-package post calls, ${productionEvidenceRunPlanRequests.length} production-evidence run-plan calls, ${outputPackageCalls.length} output-package calls, ${outputPackageResultRequests.length} output-result calls, ${productionEvidenceItemTemplateRequests.length} production-evidence item-template calls, ${productionEvidenceItemRequests.length} production-evidence item calls, ${productionEvidenceTemplateRequests.length} production-evidence template calls, ${productionEvidenceLedgerBundleRequests.length} production-evidence ledger-bundle calls, ${productionEvidenceMergeRequests.length} production-evidence merge calls, ${productionEvidenceCloseoutRequests.length} production-evidence closeout calls, ${productionEvidenceValidationRequests.length} production-evidence validate calls, ${productionEvidenceRequests.length} production-evidence import calls, ${runtimeDiscoveryCalls.length} discovery calls, ${adapterCalls.length} adapter calls, ${providerContractCalls.length} provider-contract calls, ${providerGatewayWorkerCalls.length} provider-gateway-worker calls, ${softwareContractCalls.length} software-contract calls, ${desktopContractCalls.length} desktop-contract calls, ${handoffPackageRequests.length} handoff-package calls, ${runtimeRunNextRequests.length} runtime-run-next calls, ${desktopRunNextRequests.length} desktop-run-next calls, ${promptCalls.length} prompts calls, ${transcriptCalls.length} transcript calls, ${webSocketUrls.length} websocket streams, ${eventSourceUrls.length} event streams)`);

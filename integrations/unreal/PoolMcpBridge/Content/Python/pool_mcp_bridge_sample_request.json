@@ -1,0 +1,83 @@
+{
+  "adapter_id": "unreal",
+  "action_kind": "CreateScene",
+  "priority": "ApiMcp",
+  "payload": {
+    "level": "pool_content_burst",
+    "asset_paths": [
+      "worlds/demo/output/1-world.glb"
+    ]
+  },
+  "requires_confirmation": false,
+  "pool_unreal_action": {
+    "profile_id": "unreal-create-scene",
+    "operation": "create_scene",
+    "mcp_tool": "unreal.create_scene",
+    "stage": "scene_assembly",
+    "expected_artifacts": [
+      "level",
+      "viewport"
+    ],
+    "output_contract": "unreal-mcp-action-result"
+  },
+  "mcp_payload": {
+    "tool": "unreal.create_scene",
+    "operation": "create_scene",
+    "arguments": {
+      "level": "pool_content_burst",
+      "asset_paths": [
+        "worlds/demo/output/1-world.glb"
+      ],
+      "actors": [
+        {
+          "name": "hero_world",
+          "asset_path": "/Game/Pool/Imported/1-world",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      ],
+      "camera": "hero_orbit",
+      "cameras": [
+        {
+          "name": "hero_orbit",
+          "preset": "wide_preview"
+        }
+      ],
+      "lighting": "cinematic_day",
+      "lights": [
+        {
+          "name": "key_sun",
+          "type": "directional",
+          "intensity": 3.5
+        }
+      ],
+      "output_dir": "Saved/PoolMcpBridge/SceneAssembly",
+      "world_origin": [
+        0,
+        0,
+        0
+      ]
+    },
+    "handoff": {
+      "stage": "scene_assembly",
+      "expected_artifacts": [
+        "level",
+        "viewport"
+      ],
+      "control_priority": "ApiMcp"
+    }
+  }
+}

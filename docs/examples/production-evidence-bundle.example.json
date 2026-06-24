@@ -1,0 +1,191 @@
+{
+  "source": "external-production-verification",
+  "providers": [
+    {
+      "provider_id": "midjourney",
+      "external_job_id": "mj-prod-job-001",
+      "endpoint": "https://worker.example.com/midjourney",
+      "family": "ai_media",
+      "production_attestation": "midjourney-worker-prod-run-001",
+      "artifacts": ["worlds/demo/output/production/midjourney/1-midjourney.png"]
+    },
+    {
+      "provider_id": "openai-image-2",
+      "external_job_id": "openai-image-prod-request-001",
+      "endpoint": "https://api.openai.com/v1/images/generations",
+      "family": "ai_image",
+      "production_attestation": "openai-image-worker-prod-run-001",
+      "artifacts": ["worlds/demo/output/production/openai-image-2/1-openai-image.png"]
+    },
+    {
+      "provider_id": "nano-banana-pro",
+      "external_job_id": "nano-prod-job-001",
+      "endpoint": "https://worker.example.com/nano-banana-pro",
+      "family": "ai_media",
+      "production_attestation": "nano-banana-pro-worker-prod-run-001",
+      "artifacts": ["worlds/demo/output/production/nano-banana-pro/1-nano.png"]
+    },
+    {
+      "provider_id": "suno",
+      "external_job_id": "suno-prod-job-001",
+      "endpoint": "https://worker.example.com/suno",
+      "family": "ai_media",
+      "production_attestation": "suno-worker-prod-run-001",
+      "artifacts": ["worlds/demo/output/production/suno/1-cue.mp3"]
+    },
+    {
+      "provider_id": "worldlabs-marble",
+      "external_job_id": "marble-prod-job-001",
+      "endpoint": "https://worker.example.com/worldlabs-marble",
+      "family": "3dgs",
+      "production_attestation": "worldlabs-marble-worker-prod-run-001",
+      "artifacts": ["worlds/demo/output/production/worldlabs-marble/1-world.glb"]
+    },
+    {
+      "provider_id": "tripo-splat",
+      "external_job_id": "tripo-prod-job-001",
+      "endpoint": "https://worker.example.com/tripo-splat",
+      "family": "3dgs",
+      "production_attestation": "tripo-splat-worker-prod-run-001",
+      "artifacts": ["worlds/demo/output/production/tripo-splat/1-object.glb"]
+    },
+    {
+      "provider_id": "sam-3d",
+      "external_job_id": "sam3d-prod-job-001",
+      "endpoint": "https://worker.example.com/sam-3d",
+      "family": "3dgs",
+      "production_attestation": "sam-3d-worker-prod-run-001",
+      "artifacts": ["worlds/demo/output/production/sam-3d/1-mask-object.glb"]
+    },
+    {
+      "provider_id": "spark-3dgs",
+      "external_job_id": "spark-prod-job-001",
+      "endpoint": "https://worker.example.com/spark-3dgs",
+      "family": "3dgs",
+      "production_attestation": "spark-3dgs-worker-prod-run-001",
+      "artifacts": ["worlds/demo/output/production/spark-3dgs/1-scene.glb"]
+    },
+    {
+      "provider_id": "qunhe-3d",
+      "external_job_id": "qunhe-prod-job-001",
+      "endpoint": "https://worker.example.com/qunhe-3d",
+      "family": "3dgs",
+      "production_attestation": "qunhe-3d-worker-prod-run-001",
+      "artifacts": ["worlds/demo/output/production/qunhe-3d/1-layout.glb"]
+    }
+  ],
+  "software_actions": [
+    {
+      "adapter_id": "unreal",
+      "external_action_id": "unreal-prod-action-001",
+      "production_attestation": "unreal-software-prod-run-001",
+      "action_kind": "CreateScene",
+      "priority": "ApiMcp",
+      "control_profile": "api_mcp",
+      "artifacts": ["worlds/demo/output/production/unreal/1-level.umap"]
+    },
+    {
+      "adapter_id": "blender",
+      "external_action_id": "blender-prod-action-001",
+      "production_attestation": "blender-software-prod-run-001",
+      "action_kind": "ExecuteCli",
+      "priority": "ApiMcp",
+      "control_profile": "api_mcp",
+      "artifacts": ["worlds/demo/output/production/blender/1-cleanup.blend"]
+    },
+    {
+      "adapter_id": "comfyui",
+      "external_action_id": "comfyui-prod-action-001",
+      "production_attestation": "comfyui-software-prod-run-001",
+      "action_kind": "ExecuteCli",
+      "priority": "ApiMcp",
+      "control_profile": "api_mcp",
+      "artifacts": ["worlds/demo/output/production/comfyui/1-image.png"]
+    },
+    {
+      "adapter_id": "resolve",
+      "external_action_id": "resolve-prod-action-001",
+      "production_attestation": "resolve-software-prod-run-001",
+      "action_kind": "Transcode",
+      "priority": "ApiMcp",
+      "control_profile": "api_mcp",
+      "artifacts": ["worlds/demo/output/production/resolve/1-master.mov"]
+    },
+    {
+      "adapter_id": "unity",
+      "external_action_id": "unity-prod-action-001",
+      "production_attestation": "unity-software-prod-run-001",
+      "action_kind": "ExportBuild",
+      "priority": "ApiMcp",
+      "control_profile": "api_mcp",
+      "artifacts": ["worlds/demo/output/production/unity/1-build.zip"]
+    },
+    {
+      "adapter_id": "touchdesigner",
+      "external_action_id": "touchdesigner-prod-action-001",
+      "production_attestation": "touchdesigner-software-prod-run-001",
+      "action_kind": "RunViewport",
+      "priority": "DesktopRecognition",
+      "control_profile": "desktop_recognition",
+      "artifacts": ["worlds/demo/output/production/touchdesigner/1-performance.toe"]
+    },
+    {
+      "adapter_id": "madmapper",
+      "external_action_id": "madmapper-prod-action-001",
+      "production_attestation": "madmapper-software-prod-run-001",
+      "action_kind": "RunViewport",
+      "priority": "DesktopRecognition",
+      "control_profile": "desktop_recognition",
+      "artifacts": ["worlds/demo/output/production/madmapper/1-cues.mad"]
+    },
+    {
+      "adapter_id": "nuke",
+      "external_action_id": "nuke-prod-action-001",
+      "production_attestation": "nuke-software-prod-run-001",
+      "action_kind": "Render",
+      "priority": "ApiMcp",
+      "control_profile": "api_mcp",
+      "artifacts": ["worlds/demo/output/production/nuke/1-comp.exr"]
+    },
+    {
+      "adapter_id": "motion-db",
+      "external_action_id": "motion-prod-action-001",
+      "production_attestation": "motion-db-software-prod-run-001",
+      "action_kind": "ImportAsset",
+      "priority": "ApiMcp",
+      "control_profile": "api_mcp",
+      "artifacts": ["worlds/demo/output/production/motion-db/1-take.fbx"]
+    },
+    {
+      "adapter_id": "editing-suite",
+      "external_action_id": "editing-prod-action-001",
+      "production_attestation": "editing-suite-software-prod-run-001",
+      "action_kind": "Transcode",
+      "priority": "ApiMcp",
+      "control_profile": "api_mcp",
+      "artifacts": ["worlds/demo/output/production/editing-suite/1-delivery.mp4"]
+    },
+    {
+      "adapter_id": "hermes",
+      "external_action_id": "hermes-prod-action-001",
+      "production_attestation": "hermes-software-prod-run-001",
+      "action_kind": "CreateScene",
+      "priority": "ApiMcp",
+      "control_profile": "api_mcp",
+      "artifacts": ["worlds/demo/output/production/hermes/1-session.json"]
+    }
+  ],
+  "desktop_vision": [
+    {
+      "adapter_id": "touchdesigner",
+      "external_action_id": "vision-prod-action-001",
+      "controller_id": "external-vision-controller",
+      "production_attestation": "external-vision-controller-prod-run-001",
+      "trace_path": "worlds/demo/output/production/desktop-vision/1-touchdesigner-trace.json",
+      "visual_model": "external",
+      "artifacts": [
+        "worlds/demo/output/production/desktop-vision/1-touchdesigner-trace.json"
+      ]
+    }
+  ]
+}

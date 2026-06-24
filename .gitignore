@@ -1,17 +1,6 @@
-# Build artifacts
-/target
-/Cargo.lock
-
-# IDE
-/.idea
-/.vscode
-
-# Database files
-*.db
-*.db-journal
-
-# Environment
-.env
-
-# macOS
+target/
 .DS_Store
+*.log
+__pycache__/
+*.py[cod]
+worlds/

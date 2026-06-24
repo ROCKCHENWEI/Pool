@@ -1,112 +1,182 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use serde_json::Value;
+use std::collections::BTreeMap;
 use uuid::Uuid;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum NodeType {
+    Input,
+    Prompt,
+    Storyboard,
+    Agent,
+    AgentCli,
+    Hermes,
+    AiImage,
+    AiVideo,
+    Audio,
+    ComfyUi,
+    ThreeDgs,
+    AssetPackage,
+    SoftwareControl,
+    Unreal,
+    Blender,
+    Resolve,
+    Unity,
+    TouchDesigner,
+    MadMapper,
+    Nuke,
+    MotionCaptureDb,
+    Suno,
+    ApprovalGate,
+    VideoOutput,
+    GameOutput,
+    InteractiveOutput,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum NodeStatus {
+    Idle,
+    Ready,
+    Running,
+    WaitingApproval,
+    Succeeded,
+    Failed,
+    Skipped,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ConnectionKind {
+    AssetFlow,
+    ControlFlow,
+    AgentInstruction,
+    FeedbackLoop,
+    Approval,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkflowNode {
+    pub id: String,
+    pub title: String,
+    pub node_type: NodeType,
+    pub status: NodeStatus,
+    pub provider_id: Option<String>,
+    pub software_adapter_id: Option<String>,
+    pub requires_approval: bool,
+    pub cost_estimate_tokens: u64,
+    pub parameters: Value,
+    pub position: Option<NodePosition>,
+}
+
+impl WorkflowNode {
+    pub fn new(title: impl Into<String>, node_type: NodeType) -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            title: title.into(),
+            node_type,
+            status: NodeStatus::Idle,
+            provider_id: None,
+            software_adapter_id: None,
+            requires_approval: false,
+            cost_estimate_tokens: 0,
+            parameters: Value::Object(Default::default()),
+            position: None,
+        }
+    }
+
+    pub fn with_provider(mut self, provider_id: impl Into<String>) -> Self {
+        self.provider_id = Some(provider_id.into());
+        self
+    }
+
+    pub fn with_software_adapter(mut self, software_adapter_id: impl Into<String>) -> Self {
+        self.software_adapter_id = Some(software_adapter_id.into());
+        self
+    }
+
+    pub fn with_high_cost_approval(mut self, cost_estimate_tokens: u64) -> Self {
+        self.requires_approval = true;
+        self.cost_estimate_tokens = cost_estimate_tokens;
+        self.status = NodeStatus::WaitingApproval;
+        self
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NodePosition {
+    pub x: f32,
+    pub y: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkflowConnection {
+    pub id: String,
+    pub from_node_id: String,
+    pub to_node_id: String,
+    pub kind: ConnectionKind,
+    pub label: String,
+}
+
+impl WorkflowConnection {
+    pub fn new(
+        from_node_id: impl Into<String>,
+        to_node_id: impl Into<String>,
+        kind: ConnectionKind,
+        label: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: Uuid::new_v4().to_string(),
+            from_node_id: from_node_id.into(),
+            to_node_id: to_node_id.into(),
+            kind,
+            label: label.into(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Workflow {
     pub id: String,
-    pub shot_id: String,
-    pub name: String,
-    pub nodes: Vec<Node>,
-    pub connections: Vec<Connection>,
+    pub project_slug: String,
+    pub title: String,
+    pub nodes: BTreeMap<String, WorkflowNode>,
+    pub connections: Vec<WorkflowConnection>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Node {
-    pub id: String,
-    pub node_type: NodeType,
-    pub position: (f32, f32),
-    pub params: HashMap<String, NodeParam>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum NodeType {
-    TextPrompt,
-    VISCCore,
-    SuperResolution,
-    HDR,
-    ColorGrade,
-    Subtitle,
-    Output,
-    ComfyUI,
-    APIProvider,
-    // ComfyUI 节点类型
-    ComfyUITextEncode,
-    ComfyUIKSampler,
-    ComfyUIVAEDecode,
-    ComfyUISaveImage,
-    ComfyUILoadCheckpoint,
-    ComfyUIEmptyLatentImage,
-    ComfyUIClipVisionEncode,
-    ComfyUIControlNetApply,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum NodeParam {
-    String(String),
-    Integer(i64),
-    Float(f64),
-    Boolean(bool),
-    Array(Vec<NodeParam>),
-}
-
-impl NodeParam {
-    /// Get as integer, returns None if not an Integer variant
-    pub fn as_integer(&self) -> Option<i64> {
-        match self {
-            NodeParam::Integer(i) => Some(*i),
-            _ => None,
-        }
-    }
-
-    /// Get as float, returns None if not a Float variant
-    pub fn as_float(&self) -> Option<f64> {
-        match self {
-            NodeParam::Float(f) => Some(*f),
-            NodeParam::Integer(i) => Some(*i as f64),
-            _ => None,
-        }
-    }
-
-    /// Get as string reference, returns None if not a String variant
-    pub fn as_str(&self) -> Option<&str> {
-        match self {
-            NodeParam::String(s) => Some(s),
-            _ => None,
-        }
-    }
-
-    /// Get as boolean, returns None if not a Boolean variant
-    pub fn as_bool(&self) -> Option<bool> {
-        match self {
-            NodeParam::Boolean(b) => Some(*b),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Connection {
-    pub from_node: String,
-    pub from_slot: i32,
-    pub to_node: String,
-    pub to_slot: i32,
-}
-
 impl Workflow {
-    pub fn new(name: String, shot_id: String) -> Self {
+    pub fn new(project_slug: impl Into<String>, title: impl Into<String>) -> Self {
         let now = Utc::now();
         Self {
             id: Uuid::new_v4().to_string(),
-            shot_id,
-            name,
-            nodes: Vec::new(),
+            project_slug: project_slug.into(),
+            title: title.into(),
+            nodes: BTreeMap::new(),
             connections: Vec::new(),
             created_at: now,
             updated_at: now,
         }
+    }
+
+    pub fn add_node(&mut self, node: WorkflowNode) -> String {
+        let id = node.id.clone();
+        self.nodes.insert(id.clone(), node);
+        self.updated_at = Utc::now();
+        id
+    }
+
+    pub fn connect(
+        &mut self,
+        from_node_id: impl Into<String>,
+        to_node_id: impl Into<String>,
+        kind: ConnectionKind,
+        label: impl Into<String>,
+    ) -> String {
+        let connection = WorkflowConnection::new(from_node_id, to_node_id, kind, label);
+        let id = connection.id.clone();
+        self.connections.push(connection);
+        self.updated_at = Utc::now();
+        id
     }
 }

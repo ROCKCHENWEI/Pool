@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pool 内容爆发控制台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="rail" aria-label="Pool navigation">
+        <div class="brand">
+          <div class="brand-mark">P</div>
+          <div>
+            <strong>Pool</strong>
+            <span>内容爆发工具</span>
+          </div>
+        </div>
+
+        <nav class="rail-nav" aria-label="Primary">
+          <button class="rail-item active" data-panel="workflow" type="button">
+            <span class="rail-icon">01</span>
+            <span>流程编排</span>
+          </button>
+          <button class="rail-item" data-panel="agents" type="button">
+            <span class="rail-icon">02</span>
+            <span>Agent 控制</span>
+          </button>
+          <button class="rail-item" data-panel="software" type="button">
+            <span class="rail-icon">03</span>
+            <span>软件矩阵</span>
+          </button>
+          <button class="rail-item" data-panel="ops" type="button">
+            <span class="rail-icon">04</span>
+            <span>运行中心</span>
+          </button>
+          <button class="rail-item" data-panel="integrations" type="button">
+            <span class="rail-icon">05</span>
+            <span>API 接入</span>
+          </button>
+          <button class="rail-item" data-panel="outputs" type="button">
+            <span class="rail-icon">06</span>
+            <span>三类输出</span>
+          </button>
+        </nav>
+
+        <div class="rail-footer">
+          <div class="budget-line">
+            <span>今日 Token</span>
+            <strong id="tokenTotal">42.8k</strong>
+          </div>
+          <div class="budget-meter" aria-hidden="true">
+            <span style="width: 58%"></span>
+          </div>
+          <small>高成本节点需人工确认</small>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Pool / Superteam Production OS</p>
+            <h1>5 人团队的视频、游戏、交互艺术内容爆发控制台</h1>
+          </div>
+          <div class="topbar-actions">
+            <label class="project-switcher" for="projectSelector">
+              <span>项目</span>
+              <select id="projectSelector">
+                <option value="*">全部项目</option>
+              </select>
+            </label>
+            <button id="simulateRun" class="command primary" type="button">运行一次</button>
+            <button id="approvalGate" class="command" type="button">人工确认</button>
+            <button id="exportState" class="command" type="button">导出状态</button>
+            <button id="resetState" class="command quiet" type="button">重置演示</button>
+          </div>
+        </header>
+
+        <section class="metrics" aria-label="Project metrics">
+          <article>
+            <span>当前项目</span>
+            <strong id="currentProject">neon-bazaar</strong>
+            <small id="currentProjectText">图片 + 文本 + 参考视频启动</small>
+          </article>
+          <article>
+            <span>活跃节点</span>
+            <strong id="activeNodes">9 / 14</strong>
+            <small>3 个等待外部软件回执</small>
+          </article>
+          <article>
+            <span>资产落地</span>
+            <strong>worlds/slug</strong>
+            <small>继承 image-blaster 本地优先结构</small>
+          </article>
+          <article>
+            <span>首选引擎</span>
+            <strong id="adapterHealth">Unreal</strong>
+            <small id="adapterHealthText">MCP / Python / 桌面控制兜底</small>
+          </article>
+          <article>
+            <span>资产台账</span>
+            <strong id="assetCount">0</strong>
+            <small id="queueRisk">等待首轮运行生成记录</small>
+          </article>
+          <article>
+            <span>API 接入</span>
+            <strong id="providerCount">0</strong>
+            <small id="providerHealthText">等待连接测试</small>
+          </article>
+        </section>
+
+        <section id="workflow" class="panel active-panel">
+          <div class="section-head">
+            <div>
+              <h2>节点化流程编排器</h2>
+              <p>节点图是执行真相源：展示资产流、控制流、Agent 指令、反馈循环和人工确认点。</p>
+            </div>
+            <div class="legend" aria-label="Connection legend">
+              <span><i class="asset-flow"></i>资产流</span>
+              <span><i class="control-flow"></i>控制流</span>
+              <span><i class="agent-flow"></i>Agent 指令</span>
+              <span><i class="gate-flow"></i>人工确认</span>
+              <span><i class="feedback-flow"></i>反馈循环</span>
+            </div>
+          </div>
+
+          <div class="workflow-layout">
+            <div class="graph-board" aria-label="Workflow graph">
+              <svg class="connections" viewBox="0 0 980 620" preserveAspectRatio="none" aria-hidden="true">
+                <path class="line asset-flow" d="M140 96 C250 96 265 145 360 145" />
+                <text x="236" y="86">素材启动</text>
+                <path class="line agent-flow" d="M450 145 C560 145 555 94 675 94" />
+                <text x="520" y="130">对象拆分</text>
+                <path class="line gate-flow" d="M760 120 C825 155 825 235 760 270" />
+                <text x="788" y="196">付费前确认</text>
+                <path class="line control-flow" d="M675 300 C545 300 540 430 410 430" />
+                <text x="494" y="374">转 Unreal</text>
+                <path class="line asset-flow" d="M410 430 C520 500 630 500 735 430" />
+                <text x="540" y="492">场景输出</text>
+                <path class="line agent-flow" d="M675 94 C780 65 850 80 910 150" />
+                <text x="796" y="70">生成接口</text>
+                <path class="line control-flow" d="M735 430 C820 390 880 420 920 500" />
+                <text x="810" y="406">多端输出</text>
+              </svg>
+              <div id="nodeLayer" class="node-layer"></div>
+            </div>
+
+            <aside class="inspector" aria-live="polite">
+              <div class="inspector-top">
+                <span id="nodeType">Input Node</span>
+                <strong id="nodeTitle">创意启动包</strong>
+              </div>
+              <dl>
+                <div>
+                  <dt>状态</dt>
+                  <dd id="nodeStatus">ready</dd>
+                </div>
+                <div>
+                  <dt>Agent</dt>
+                  <dd id="nodeAgent">Creative Scout</dd>
+                </div>
+                <div>
+                  <dt>控制方式</dt>
+                  <dd id="nodeControl">API / 文件导入</dd>
+                </div>
+                <div>
+                  <dt>输入</dt>
+                  <dd id="nodeInput">图片、视频、文字、Prompt</dd>
+                </div>
+                <div>
+                  <dt>输出</dt>
+                  <dd id="nodeOutput">CreativeBrief + source/</dd>
+                </div>
+              </dl>
+              <div class="node-log" id="nodeLog">
+                <span>09:41:12</span>
+                <p>项目已创建，等待素材分析。</p>
+              </div>
+              <div class="inline-actions inspector-actions">
+                <button id="runSelectedNode" class="mini-command primary-mini" type="button">运行节点</button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="ops" class="panel">
+          <div class="section-head">
+            <div>
+              <h2>运行中心</h2>
+              <p>把节点图变成真实运行状态：任务队列、资产台账、Adapter 健康、事件流和可导出的项目状态。</p>
+            </div>
+          </div>
+          <div class="ops-layout">
+            <article class="ops-card task-card">
+              <header>
+                <div>
+                  <span>Task Queue</span>
+                  <h3>任务队列</h3>
+                </div>
+                <strong id="queueSummary">0 running</strong>
+              </header>
+              <div id="taskQueue" class="task-list"></div>
+            </article>
+            <article class="ops-card asset-card">
+              <header>
+                <div>
+                  <span>Asset Ledger</span>
+                  <h3>资产台账</h3>
+                </div>
+                <strong id="assetSummary">0 files</strong>
+              </header>
+              <div id="assetLedger" class="asset-list"></div>
+            </article>
+            <article class="ops-card adapter-card">
+              <header>
+                <div>
+                  <span>Adapter Health</span>
+                  <h3>控制适配器</h3>
+                </div>
+                <strong id="adapterSummary">checking</strong>
+              </header>
+              <div id="adapterPanel" class="adapter-list"></div>
+            </article>
+            <article class="ops-card event-card">
+              <header>
+                <div>
+                  <span>Event Stream</span>
+                  <h3>运行事件流</h3>
+                </div>
+                <strong id="eventSummary">live</strong>
+              </header>
+              <div id="eventStream" class="event-stream"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="integrations" class="panel">
+          <div class="section-head">
+            <div>
+              <h2>AI 图片、3DGS、Hermes 与 Agent CLI 接入</h2>
+              <p>统一管理生成 Provider、3DGS 转换 Provider、Hermes 内嵌控制和 Agent CLI 命令模板。</p>
+            </div>
+            <div class="inline-actions">
+              <button id="integrationConformancePackage" class="command" type="button">总验收包</button>
+              <button id="adapterHealthSweep" class="command" type="button">批量巡检 Adapter</button>
+            </div>
+          </div>
+          <div class="integration-layout">
+            <div id="providerGatewayWorkerPanel" class="provider-gateway-worker-panel"></div>
+            <article class="integration-card integration-readiness-card">
+              <header>
+                <div>
+                  <span>Integration Readiness</span>
+                  <h3>接入就绪矩阵</h3>
+                </div>
+                <strong id="integrationReadinessSummary">loading</strong>
+              </header>
+              <div id="integrationReadinessPanel" class="integration-readiness-panel"></div>
+            </article>
+            <article class="integration-card production-evidence-card">
+              <header>
+                <div>
+                  <span>Production Evidence</span>
+                  <h3>生产证据导入</h3>
+                </div>
+                <strong id="productionEvidenceSummary">waiting</strong>
+              </header>
+              <label class="field-label" for="productionEvidenceBundle">Bundle JSON</label>
+              <textarea id="productionEvidenceBundle" class="control-input command-box production-evidence-input" rows="8" placeholder="粘贴真实 Provider、软件控制和桌面视觉 controller 的生产证据 bundle JSON。"></textarea>
+              <label class="field-label" for="productionEvidenceTaskSelect">Evidence Task</label>
+              <select id="productionEvidenceTaskSelect" class="control-input">
+                <option value="">等待 evidence task</option>
+              </select>
+              <div class="inline-actions">
+                <button id="loadProductionEvidenceTemplate" class="command" type="button">生成脚手架</button>
+                <button id="loadProductionEvidenceItemTemplate" class="command" type="button">生成单项</button>
+                <button id="claimProductionEvidenceTask" class="command" type="button">领取任务</button>
+                <button id="loadProductionEvidenceLedgerBundle" class="command" type="button">账本收口</button>
+                <button id="createProductionEvidenceHandoffPackage" class="command" type="button">写交付包</button>
+                <button id="createProductionEvidenceRunPlan" class="command" type="button">生成计划</button>
+                <button id="loadProductionEvidenceExample" class="command" type="button">填入示例</button>
+                <button id="mergeProductionEvidence" class="command" type="button">合并证据</button>
+                <button id="closeoutProductionEvidence" class="command" type="button">收口预检</button>
+                <button id="validateProductionEvidence" class="command" type="button">校验证据</button>
+                <button id="validateProductionEvidenceItem" class="command" type="button">预检单项</button>
+                <button id="submitProductionEvidenceItem" class="command" type="button">提交单项</button>
+                <button id="closeoutImportProductionEvidence" class="command" type="button">收口导入</button>
+                <button id="importProductionEvidence" class="command primary" type="button">导入证据</button>
+              </div>
+              <div id="productionEvidenceResult" class="production-evidence-result"></div>
+            </article>
+            <article class="integration-card provider-card">
+              <header>
+                <div>
+                  <span>AI Image APIs</span>
+                  <h3>AI 图片 / 视频生成接口</h3>
+                </div>
+                <strong id="aiProviderSummary">0 ready</strong>
+              </header>
+              <div id="aiProviderGrid" class="provider-grid"></div>
+            </article>
+            <article class="integration-card provider-card">
+              <header>
+                <div>
+                  <span>3DGS APIs</span>
+                  <h3>3DGS / 2D→3D 转换接口</h3>
+                </div>
+                <strong id="gsProviderSummary">0 ready</strong>
+              </header>
+              <div id="gsProviderGrid" class="provider-grid"></div>
+            </article>
+            <article class="integration-card runtime-budget-card">
+              <header>
+                <div>
+                  <span>Runtime Budget</span>
+                  <h3>预算与凭证就绪</h3>
+                </div>
+                <strong id="runtimeBudgetSummary">0 tokens</strong>
+              </header>
+              <div id="runtimeBudgetPanel" class="runtime-budget-panel"></div>
+            </article>
+            <article class="integration-card runtime-preflight-card">
+              <header>
+                <div>
+                  <span>Runtime Preflight</span>
+                  <h3>运行前检查</h3>
+                </div>
+                <strong id="runtimePreflightSummary">checking</strong>
+              </header>
+              <div id="runtimePreflightPanel" class="runtime-preflight-panel"></div>
+            </article>
+            <article class="integration-card runtime-handoff-card">
+              <header>
+                <div>
+                  <span>Runtime Handoff</span>
+                  <h3>执行接管 Runbook</h3>
+                </div>
+                <button id="runtimeHandoffPackage" class="mini-command" type="button">生成接管包</button>
+                <strong id="runtimeHandoffSummary">0 cmds</strong>
+              </header>
+              <div id="runtimeHandoffPanel" class="runtime-handoff-panel"></div>
+            </article>
+            <article class="integration-card prd-readiness-card">
+              <header>
+                <div>
+                  <span>PRD Readiness</span>
+                  <h3>开发计划完成度</h3>
+                </div>
+                <strong id="prdReadinessSummary">partial</strong>
+              </header>
+              <div id="prdReadinessPanel" class="prd-readiness-panel"></div>
+            </article>
+            <article class="integration-card hermes-card">
+              <header>
+                <div>
+                  <span>Hermes Embedded Control</span>
+                  <h3>Hermes 内嵌控制</h3>
+                </div>
+                <strong id="hermesStatus">standby</strong>
+              </header>
+              <label class="field-label" for="hermesEndpoint">Hermes Endpoint</label>
+              <input id="hermesEndpoint" class="control-input" type="text" value="http://localhost:8787/hermes" />
+              <div class="runbook-toolbar">
+                <label class="field-label" for="hermesRunbookSelect">Runbook</label>
+                <select id="hermesRunbookSelect" class="control-input"></select>
+                <label class="field-label" for="hermesRunbookTarget">参数</label>
+                <input id="hermesRunbookTarget" class="control-input" type="text" value="blender" />
+                <button id="applyHermesRunbook" class="command" type="button">加载</button>
+                <span id="hermesRunbookSource" class="tag">local</span>
+              </div>
+              <div id="hermesRunbookPreview" class="runbook-preview"></div>
+              <label class="field-label" for="hermesPrompt">控制指令</label>
+              <textarea id="hermesPrompt" class="control-input command-box" rows="5">检查 Unreal Adapter，准备导入 neon-bazaar 的 3DGS 与 GLB 资产。</textarea>
+              <div class="inline-actions">
+                <button id="sendHermesCommand" class="command primary" type="button">发送 Hermes 指令</button>
+                <button id="stageHermesTask" class="command" type="button">写入任务队列</button>
+                <button id="agentConformancePackage" class="command" type="button">导出验收包</button>
+              </div>
+              <div id="hermesDecisionPanel" class="decision-panel"></div>
+              <div id="hermesSessionStream" class="session-stream"></div>
+              <div id="hermesTrace" class="trace-box"></div>
+            </article>
+            <article class="integration-card cli-card">
+              <header>
+                <div>
+                  <span>Agent CLI</span>
+                  <h3>Agent 接口 CLI 模板</h3>
+                </div>
+                <strong id="cliSummary">4 commands</strong>
+              </header>
+              <div id="cliCommandList" class="cli-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="agents" class="panel">
+          <div class="section-head">
+            <div>
+              <h2>Agent 控制与成本管理</h2>
+              <p>每个 Agent 都有权限边界、Token 预算、工具调用日志和人工接管入口。</p>
+            </div>
+          </div>
+          <div id="runtimeDiscoveryPanel" class="runtime-discovery-panel"></div>
+          <div class="agent-grid" id="agentGrid"></div>
+        </section>
+
+        <section id="software" class="panel">
+          <div class="section-head">
+            <div>
+              <h2>外部软件控制矩阵</h2>
+              <p>控制优先级：API/MCP/插件/脚本/CLI 优先，桌面画面识别作为兜底。</p>
+            </div>
+          </div>
+          <div class="software-table" id="softwareTable"></div>
+          <div class="desktop-queue">
+            <div class="queue-head">
+              <div>
+                <span>Desktop Recognition</span>
+                <h3>桌面识别接管队列</h3>
+                <p>没有 API/MCP/CLI 的软件动作会在这里等待外部桌面 controller 或人工回填。</p>
+              </div>
+              <div class="queue-actions">
+                <strong id="desktopQueueSummary">0 waiting</strong>
+                <button id="refreshDesktopQueue" class="mini-command" type="button">刷新队列</button>
+                <button id="runDesktopQueue" class="mini-command primary-mini" type="button">Dry-run 推进下一个</button>
+              </div>
+            </div>
+            <div id="desktopRecognitionQueue" class="desktop-queue-list"></div>
+          </div>
+        </section>
+
+        <section id="outputs" class="panel">
+          <div class="section-head">
+            <div>
+              <h2>视频、游戏、交互艺术输出</h2>
+              <p>三类输出共享资产池和节点图，但有独立的时间线、运行视口和设备控制结构。</p>
+            </div>
+            <button id="outputPackage" class="command primary" type="button">生成输出包</button>
+          </div>
+          <div class="output-grid">
+            <article class="output-lane video-lane">
+              <span>Video</span>
+              <h3>时间线与转码</h3>
+              <p>镜头列表、音频轨、调色/合成回写、DaVinci Resolve 渲染队列。</p>
+              <ol>
+                <li>分镜节点转镜头卡</li>
+                <li>素材池同步到剪辑软件</li>
+                <li>转码输出审片文件</li>
+              </ol>
+            </article>
+            <article class="output-lane game-lane">
+              <span>Game</span>
+              <h3>运行原型</h3>
+              <p>Unreal 关卡结构、蓝图模板、运行视口、Unity Adapter 预留。</p>
+              <ol>
+                <li>资产导入与碰撞设置</li>
+                <li>交互逻辑生成</li>
+                <li>运行视口验证</li>
+              </ol>
+            </article>
+            <article class="output-lane art-lane">
+              <span>Interactive Art</span>
+              <h3>节点与现场控制</h3>
+              <p>TouchDesigner/MadMapper 风格节点网络，连接 OSC、MIDI、DMX、Art-Net、Serial。</p>
+              <ol>
+                <li>实时视觉节点</li>
+                <li>设备映射与参数绑定</li>
+                <li>现场输出预案</li>
+              </ol>
+            </article>
+          </div>
+          <div id="outputManifestPanel" class="manifest-panel"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
